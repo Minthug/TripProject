@@ -16,10 +16,16 @@ void main() {
     expect(find.text('NextMate · UI Gallery'), findsOneWidget);
     expect(find.text('Splash'), findsOneWidget);
     expect(find.text('Plan trip'), findsOneWidget);
+    expect(find.text('Stay planner'), findsOneWidget);
+    expect(find.text('Plan around your stays'), findsOneWidget);
+    expect(find.text('Add stay'), findsOneWidget);
+    expect(find.text('Use this location'), findsOneWidget);
     expect(find.text('Taxi handoff'), findsOneWidget);
     expect(find.text('Ready to open Uber?'), findsOneWidget);
+    expect(find.text('Driver card'), findsWidgets);
+    expect(find.text('국립현대미술관\n서울관 정문으로\n가 주세요.'), findsOneWidget);
     expect(find.text('When will you be\nin Seoul?'), findsOneWidget);
-    expect(find.text('L7 Myeongdong'), findsOneWidget);
+    expect(find.text('L7 Myeongdong'), findsWidgets);
     expect(find.text('Next move'), findsOneWidget);
     expect(find.text('Day timeline'), findsOneWidget);
     expect(find.text('Live map'), findsOneWidget);
@@ -38,9 +44,11 @@ void main() {
 
     expect(find.text('Travel Home'), findsOneWidget);
     expect(find.text('NextMate Splash'), findsOneWidget);
-    expect(find.text('Trip Setup'), findsOneWidget);
+    expect(find.text('Stay-based Planner'), findsOneWidget);
+    expect(find.text('Add Stay Map'), findsOneWidget);
+    expect(find.text('+ Stay'), findsOneWidget);
     expect(find.text('New trip'), findsOneWidget);
-    expect(find.text('Add places'), findsOneWidget);
+    expect(find.text('Build itinerary'), findsOneWidget);
     expect(find.text('Active trip'), findsOneWidget);
     expect(find.text('Uber Handoff Sheet'), findsOneWidget);
     expect(find.text('Continue in Uber'), findsOneWidget);
@@ -62,5 +70,63 @@ void main() {
     expect(find.text('Ready to open Uber?'), findsOneWidget);
     expect(find.text('Current location'), findsOneWidget);
     expect(find.text('Continue in Uber'), findsOneWidget);
+
+    await tester.tap(find.text('Driver card'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('기사님, 안녕하세요.'), findsOneWidget);
+    expect(find.text('서울특별시 종로구 삼청로 30'), findsOneWidget);
+    expect(find.text('Play Korean audio'), findsOneWidget);
+  });
+
+  testWidgets('stay planner switches anchors and adds nearby places', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: StayBasedPlannerScreen())),
+    );
+
+    expect(find.text('Myeongdong Cathedral'), findsOneWidget);
+    expect(find.text('Build 1 place itinerary'), findsOneWidget);
+
+    await tester.tap(find.text('Bukchon Hanok'));
+    await tester.pump();
+    expect(find.text('Gyeongbokgung Palace'), findsOneWidget);
+
+    await tester.tap(find.text('+ Add').first);
+    await tester.pump();
+    expect(find.text('Build 2 place itinerary'), findsOneWidget);
+  });
+
+  testWidgets('add stay searches map location and opens date assignment', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: AddStayMapScreen())),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.tap(find.text('L7 Hongdae'));
+    await tester.pump();
+
+    expect(find.text('서울특별시 마포구 양화로 141'), findsOneWidget);
+
+    await tester.tap(find.text('Use this location'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('When are you staying?'), findsOneWidget);
+    expect(find.text('Wed, Sep 16'), findsOneWidget);
+    expect(find.text('Add 2-night stay'), findsOneWidget);
   });
 }

@@ -56,12 +56,23 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
   void initState() {
     super.initState();
     flowMode = Uri.base.queryParameters['view'] == 'flow';
+    final requestedScreen = int.tryParse(
+      Uri.base.queryParameters['screen'] ?? '',
+    );
+    if (requestedScreen != null &&
+        requestedScreen >= 0 &&
+        requestedScreen < variants.length) {
+      selected = requestedScreen;
+    }
   }
 
   static const variants = [
     _VariantInfo('00', 'Splash', '앱 실행과 여행 상태 확인'),
     _VariantInfo('01', 'Plan trip', '여행 날짜와 숙소 먼저 등록'),
-    _VariantInfo('02', 'Taxi handoff', '출발지와 목적지 최종 확인'),
+    _VariantInfo('02', 'Stay planner', '다중 숙소와 주변 명소로 일정 구성'),
+    _VariantInfo('03', 'Add stay', '지도에서 숙소 위치와 입구 확인'),
+    _VariantInfo('04', 'Taxi handoff', '출발지와 목적지 최종 확인'),
+    _VariantInfo('05', 'Driver card', '기사에게 현지어 목적지 표시'),
     _VariantInfo('A', 'Next move', '출발 시각과 다음 행동 중심'),
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
@@ -70,9 +81,12 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
   Widget _screen(int index) => switch (index) {
     0 => const SplashScreenPreview(),
     1 => const TripSetupScreen(),
-    2 => const UberHandoffPreview(),
-    3 => const NextMoveHome(),
-    4 => const TimelineHome(),
+    2 => const StayBasedPlannerScreen(),
+    3 => const AddStayMapScreen(),
+    4 => const UberHandoffPreview(),
+    5 => const DriverCardPreview(),
+    6 => const NextMoveHome(),
+    7 => const TimelineHome(),
     _ => const MapFirstHome(),
   };
 
@@ -226,16 +240,19 @@ class _GalleryHeader extends StatelessWidget {
                     ButtonSegment(value: 0, label: Text('00')),
                     ButtonSegment(value: 1, label: Text('01')),
                     ButtonSegment(value: 2, label: Text('02')),
-                    ButtonSegment(value: 3, label: Text('A')),
-                    ButtonSegment(value: 4, label: Text('B')),
-                    ButtonSegment(value: 5, label: Text('C')),
+                    ButtonSegment(value: 3, label: Text('03')),
+                    ButtonSegment(value: 4, label: Text('04')),
+                    ButtonSegment(value: 5, label: Text('05')),
+                    ButtonSegment(value: 6, label: Text('A')),
+                    ButtonSegment(value: 7, label: Text('B')),
+                    ButtonSegment(value: 8, label: Text('C')),
                   ],
                   selected: {selected},
                   onSelectionChanged: (value) => onSelected(value.first),
                 )
               else
                 Text(
-                  flowMode ? '버튼 → 화면 연결도' : '6 screens',
+                  flowMode ? '버튼 → 화면 연결도' : '9 screens',
                   style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
             ],
@@ -578,7 +595,11 @@ class _TripSetupScreenState extends State<TripSetupScreen> {
             icon: Icons.arrow_forward_rounded,
             background: AppColors.green,
             foreground: Colors.white,
-            onTap: () => _showPrototypeMessage(context),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: StayBasedPlannerScreen()),
+              ),
+            ),
           ),
         ],
       ),
@@ -796,6 +817,1411 @@ class _TripCalendar extends StatelessWidget {
   }
 }
 
+class StayBasedPlannerScreen extends StatefulWidget {
+  const StayBasedPlannerScreen({super.key});
+
+  @override
+  State<StayBasedPlannerScreen> createState() => _StayBasedPlannerScreenState();
+}
+
+class _StayBasedPlannerScreenState extends State<StayBasedPlannerScreen> {
+  int selectedStay = 0;
+  final Set<int> addedPlaces = {0};
+
+  static const _recommendations = [
+    [
+      ('Myeongdong Cathedral', '명동성당', '8 min walk', 'Easy first-day stop'),
+      ('N Seoul Tower', '남산서울타워', '22 min transit', 'Best after 6 PM'),
+      ('Namdaemun Market', '남대문시장', '15 min walk', 'Breakfast favorite'),
+    ],
+    [
+      ('Gyeongbokgung Palace', '경복궁', '9 min walk', 'Go before 10 AM'),
+      ('MMCA Seoul', '국립현대미술관 서울', '7 min walk', 'Closed at 6 PM'),
+      ('Bukchon Hanok Village', '북촌한옥마을', '6 min walk', 'Quiet morning route'),
+    ],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final places = _recommendations[selectedStay];
+    final stayName = selectedStay == 0 ? 'L7 Myeongdong' : 'Bukchon Hanok Stay';
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: Navigator.of(context).canPop()
+                    ? () => Navigator.pop(context)
+                    : null,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.paleGreen,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded, size: 20),
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                'Build your trip',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(body: AddStayMapScreen()),
+                  ),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Stay'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.green,
+                  textStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            'Plan around your stays',
+            style: TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Seoul · Sep 14–18 · 4 nights',
+            style: TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+          const SizedBox(height: 14),
+          const _StayTimeline(),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              Expanded(
+                child: _StaySelector(
+                  selected: selectedStay == 0,
+                  title: 'L7 Myeongdong',
+                  dates: 'Sep 14–16 · 2 nights',
+                  onTap: () => setState(() => selectedStay = 0),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: _StaySelector(
+                  selected: selectedStay == 1,
+                  title: 'Bukchon Hanok',
+                  dates: 'Sep 16–18 · 2 nights',
+                  onTap: () => setState(() => selectedStay = 1),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 17),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Popular near your stay', style: _sectionTitle),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Starting from $stayName',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.green,
+                size: 18,
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          for (var index = 0; index < places.length; index++) ...[
+            _NearbyPlaceCard(
+              place: places[index],
+              added: addedPlaces.contains(selectedStay * 10 + index),
+              onTap: () => setState(() {
+                final key = selectedStay * 10 + index;
+                addedPlaces.contains(key)
+                    ? addedPlaces.remove(key)
+                    : addedPlaces.add(key);
+              }),
+            ),
+            if (index != places.length - 1) const SizedBox(height: 8),
+          ],
+          const Spacer(),
+          _PrimaryAction(
+            label: 'Build ${addedPlaces.length} place itinerary',
+            icon: Icons.auto_awesome_rounded,
+            background: AppColors.green,
+            foreground: Colors.white,
+            onTap: () => _showPrototypeMessage(context),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StayTimeline extends StatelessWidget {
+  const _StayTimeline();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            children: [
+              Text(
+                'All nights covered',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+              Spacer(),
+              Icon(
+                Icons.check_circle_rounded,
+                size: 16,
+                color: AppColors.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Row(
+            children: [
+              for (final day in ['14', '15', '16', '17', '18'])
+                Expanded(
+                  child: Text(
+                    day,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 9, color: AppColors.muted),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.deepGreen,
+                    borderRadius: BorderRadius.horizontal(
+                      left: Radius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'L7 · 2 nights',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.green,
+                    borderRadius: BorderRadius.horizontal(
+                      right: Radius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'Bukchon · 2 nights',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F0D5),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.luggage_rounded, size: 15),
+                SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    'Sep 16 · Stay move day · Plan luggage',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaySelector extends StatelessWidget {
+  const _StaySelector({
+    required this.selected,
+    required this.title,
+    required this.dates,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final String title;
+  final String dates;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        padding: const EdgeInsets.all(11),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.paleGreen : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: selected ? AppColors.green : AppColors.line,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.hotel_rounded,
+                  size: 14,
+                  color: selected ? AppColors.green : AppColors.muted,
+                ),
+                const Spacer(),
+                if (selected)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 14,
+                    color: AppColors.green,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              dates,
+              style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NearbyPlaceCard extends StatelessWidget {
+  const _NearbyPlaceCard({
+    required this.place,
+    required this.added,
+    required this.onTap,
+  });
+
+  final (String, String, String, String) place;
+  final bool added;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 39,
+            height: 39,
+            decoration: BoxDecoration(
+              color: AppColors.paleGreen,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.account_balance_rounded,
+              color: AppColors.green,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  place.$1,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  '${place.$2} · ${place.$3}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                ),
+                Text(
+                  place.$4,
+                  style: const TextStyle(fontSize: 8.5, color: AppColors.green),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 61,
+            height: 31,
+            child: added
+                ? OutlinedButton(
+                    onPressed: onTap,
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: AppColors.green,
+                      side: const BorderSide(color: AppColors.green),
+                    ),
+                    child: const Text('Added', style: TextStyle(fontSize: 9)),
+                  )
+                : FilledButton(
+                    onPressed: onTap,
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: AppColors.deepGreen,
+                    ),
+                    child: const Text('+ Add', style: TextStyle(fontSize: 9)),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddStayMapScreen extends StatefulWidget {
+  const AddStayMapScreen({super.key});
+
+  @override
+  State<AddStayMapScreen> createState() => _AddStayMapScreenState();
+}
+
+class _AddStayMapScreenState extends State<AddStayMapScreen> {
+  final _searchController = TextEditingController(text: 'L7 Myeongdong');
+  bool showResults = false;
+  bool mapMoved = false;
+  Offset mapOffset = Offset.zero;
+  String stayName = 'L7 Myeongdong';
+  String localName = 'L7 명동 바이 롯데';
+  String address = '서울특별시 중구 퇴계로 137';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _selectResult({
+    required String name,
+    required String local,
+    required String newAddress,
+  }) {
+    setState(() {
+      stayName = name;
+      localName = local;
+      address = newAddress;
+      _searchController.text = name;
+      showResults = false;
+      mapMoved = false;
+      mapOffset = Offset.zero;
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            onPanUpdate: (details) => setState(() {
+              mapOffset += details.delta;
+              mapMoved = true;
+              showResults = false;
+            }),
+            child: _StayPickerMap(offset: mapOffset),
+          ),
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          top: 16,
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    _MapCircleButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: Navigator.of(context).canPop()
+                          ? () => Navigator.pop(context)
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Add a stay',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'Seoul',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  elevation: 3,
+                  shadowColor: Colors.black26,
+                  child: TextField(
+                    controller: _searchController,
+                    onTap: () => setState(() => showResults = true),
+                    onChanged: (_) => setState(() => showResults = true),
+                    decoration: InputDecoration(
+                      hintText: 'Hotel name or address',
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.green,
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() {
+                          _searchController.clear();
+                          showResults = true;
+                        }),
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (showResults) ...[
+                  const SizedBox(height: 7),
+                  _StaySearchResults(onSelected: _selectResult),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          right: 16,
+          top: 245,
+          child: Column(
+            children: [
+              _MapCircleButton(
+                icon: Icons.my_location_rounded,
+                onTap: () => setState(() {
+                  mapOffset = Offset.zero;
+                  mapMoved = false;
+                }),
+              ),
+              const SizedBox(height: 8),
+              const _MapCircleButton(icon: Icons.layers_outlined),
+            ],
+          ),
+        ),
+        const Align(alignment: Alignment(0, -.1), child: _CenterStayPin()),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 11, 20, 22),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFAFBF9),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 24,
+                  offset: Offset(0, -6),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD5DAD6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.paleGreen,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.hotel_rounded,
+                          color: AppColors.green,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mapMoved ? 'Custom entrance pin' : stayName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              mapMoved ? 'Move the map to adjust' : localName,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.verified_rounded,
+                        size: 18,
+                        color: AppColors.green,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 13),
+                  _LocationCheckRow(
+                    icon: Icons.signpost_rounded,
+                    title: 'Local address',
+                    detail: address,
+                  ),
+                  const SizedBox(height: 9),
+                  _LocationCheckRow(
+                    icon: Icons.door_front_door_rounded,
+                    title: 'Pickup entrance',
+                    detail: mapMoved
+                        ? 'Pin adjusted manually'
+                        : 'Main entrance · Toegye-ro',
+                  ),
+                  const SizedBox(height: 14),
+                  _PrimaryAction(
+                    label: 'Use this location',
+                    icon: Icons.arrow_forward_rounded,
+                    background: AppColors.green,
+                    foreground: Colors.white,
+                    onTap: () => _showStayDatesSheet(
+                      context,
+                      stayName: mapMoved ? 'Custom stay' : stayName,
+                      address: address,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StaySearchResults extends StatelessWidget {
+  const _StaySearchResults({required this.onSelected});
+
+  final void Function({
+    required String name,
+    required String local,
+    required String newAddress,
+  })
+  onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 4,
+      child: Column(
+        children: [
+          _StaySearchResult(
+            title: 'L7 Myeongdong',
+            detail: 'L7 명동 바이 롯데 · 137 Toegye-ro',
+            onTap: () => onSelected(
+              name: 'L7 Myeongdong',
+              local: 'L7 명동 바이 롯데',
+              newAddress: '서울특별시 중구 퇴계로 137',
+            ),
+          ),
+          const Divider(height: 1, indent: 48),
+          _StaySearchResult(
+            title: 'L7 Hongdae',
+            detail: 'L7 홍대 바이 롯데 · 141 Yanghwa-ro',
+            onTap: () => onSelected(
+              name: 'L7 Hongdae',
+              local: 'L7 홍대 바이 롯데',
+              newAddress: '서울특별시 마포구 양화로 141',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaySearchResult extends StatelessWidget {
+  const _StaySearchResult({
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      onTap: onTap,
+      leading: const Icon(
+        Icons.hotel_rounded,
+        color: AppColors.green,
+        size: 19,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(
+        detail,
+        style: const TextStyle(fontSize: 9, color: AppColors.muted),
+      ),
+      trailing: const Icon(Icons.north_west_rounded, size: 15),
+    );
+  }
+}
+
+class _MapCircleButton extends StatelessWidget {
+  const _MapCircleButton({required this.icon, this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 2,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, size: 19, color: AppColors.ink),
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterStayPin extends StatelessWidget {
+  const _CenterStayPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.deepGreen,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: const Text(
+            'Entrance',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const Icon(Icons.location_on_rounded, color: AppColors.green, size: 42),
+        Container(
+          width: 12,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: .18),
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LocationCheckRow extends StatelessWidget {
+  const _LocationCheckRow({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: AppColors.green),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 9, color: AppColors.muted),
+              ),
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StayPickerMap extends StatelessWidget {
+  const _StayPickerMap({required this.offset});
+
+  final Offset offset;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _StayPickerMapPainter(offset),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _StayPickerMapPainter extends CustomPainter {
+  const _StayPickerMapPainter(this.offset);
+
+  final Offset offset;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFE8ECE7),
+    );
+    canvas.save();
+    canvas.translate(offset.dx % 120, offset.dy % 120);
+    final minor = Paint()
+      ..color = const Color(0xFFD1D9D3)
+      ..strokeWidth = 5
+      ..style = PaintingStyle.stroke;
+    final road = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 14
+      ..style = PaintingStyle.stroke;
+    for (var x = -100.0; x < size.width + 100; x += 92) {
+      canvas.drawLine(
+        Offset(x, -100),
+        Offset(x + 150, size.height + 100),
+        minor,
+      );
+    }
+    for (var y = 120.0; y < size.height; y += 115) {
+      final path = Path()
+        ..moveTo(-100, y)
+        ..cubicTo(
+          size.width * .25,
+          y - 28,
+          size.width * .7,
+          y + 32,
+          size.width + 100,
+          y - 5,
+        );
+      canvas.drawPath(path, road);
+    }
+    canvas.drawCircle(
+      Offset(size.width * .2, size.height * .43),
+      47,
+      Paint()..color = const Color(0xFFCFE2DE),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _StayPickerMapPainter oldDelegate) =>
+      oldDelegate.offset != offset;
+}
+
+void _showStayDatesSheet(
+  BuildContext context, {
+  required String stayName,
+  required String address,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => _StayDatesSheet(
+      stayName: stayName,
+      address: address,
+      onAdd: () {
+        Navigator.pop(sheetContext);
+        _showPrototypeMessage(context);
+      },
+    ),
+  );
+}
+
+class _StayDatesSheet extends StatelessWidget {
+  const _StayDatesSheet({
+    required this.stayName,
+    required this.address,
+    required this.onAdd,
+  });
+
+  final String stayName;
+  final String address;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 11, 20, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'When are you staying?',
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                stayName,
+                style: const TextStyle(fontSize: 13, color: AppColors.green),
+              ),
+              Text(
+                address,
+                style: const TextStyle(fontSize: 10, color: AppColors.muted),
+              ),
+              const SizedBox(height: 17),
+              const Row(
+                children: [
+                  Expanded(
+                    child: _StayDateBox(
+                      label: 'CHECK-IN',
+                      date: 'Wed, Sep 16',
+                      time: '3:00 PM',
+                    ),
+                  ),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: _StayDateBox(
+                      label: 'CHECK-OUT',
+                      date: 'Fri, Sep 18',
+                      time: '11:00 AM',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.paleGreen,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 17,
+                      color: AppColors.green,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Fills your uncovered Sep 16–18 stay · 2 nights',
+                        style: TextStyle(fontSize: 10.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              _PrimaryAction(
+                label: 'Add 2-night stay',
+                icon: Icons.add_rounded,
+                background: AppColors.green,
+                foreground: Colors.white,
+                onTap: onAdd,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StayDateBox extends StatelessWidget {
+  const _StayDateBox({
+    required this.label,
+    required this.date,
+    required this.time,
+  });
+
+  final String label;
+  final String date;
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9F7),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 8,
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            date,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          ),
+          Text(
+            time,
+            style: const TextStyle(fontSize: 10, color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DriverCardPreview extends StatelessWidget {
+  const DriverCardPreview({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const _DriverCardContent(preview: true);
+  }
+}
+
+class _DriverCardContent extends StatelessWidget {
+  const _DriverCardContent({this.preview = false});
+
+  final bool preview;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.deepGreen,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: preview ? null : () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    style: IconButton.styleFrom(
+                      disabledBackgroundColor: Colors.white.withValues(
+                        alpha: .12,
+                      ),
+                      disabledForegroundColor: Colors.white,
+                      backgroundColor: Colors.white.withValues(alpha: .12),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SHOW TO YOUR DRIVER',
+                          style: TextStyle(
+                            color: Color(0xFFAED8C4),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        Text(
+                          'Destination card',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: const Text(
+                      '한국어  KO',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDFDFB),
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.waving_hand_rounded,
+                            color: Color(0xFFE7AA27),
+                            size: 19,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '기사님, 안녕하세요.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 17),
+                      const Text(
+                        '국립현대미술관\n서울관 정문으로\n가 주세요.',
+                        style: TextStyle(
+                          fontSize: 27,
+                          height: 1.3,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.7,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(height: 1, color: AppColors.line),
+                      const SizedBox(height: 17),
+                      const _DriverDetail(
+                        icon: Icons.location_on_rounded,
+                        label: '목적지',
+                        value: '국립현대미술관 서울',
+                      ),
+                      const SizedBox(height: 14),
+                      const _DriverDetail(
+                        icon: Icons.signpost_rounded,
+                        label: '주소',
+                        value: '서울특별시 종로구 삼청로 30',
+                      ),
+                      const SizedBox(height: 14),
+                      const _DriverDetail(
+                        icon: Icons.door_front_door_rounded,
+                        label: '내리는 곳',
+                        value: '서울관 정문 · 삼청로 방면',
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          color: AppColors.paleGreen,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.verified_rounded,
+                              color: AppColors.green,
+                              size: 18,
+                            ),
+                            SizedBox(width: 9),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'English check',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.green,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Please take me to the main entrance of MMCA Seoul.',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: preview
+                      ? null
+                      : () => _showPrototypeMessage(context),
+                  icon: const Icon(Icons.volume_up_rounded, size: 19),
+                  label: const Text('Play Korean audio'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7F0D5),
+                    foregroundColor: AppColors.ink,
+                    disabledBackgroundColor: const Color(0xFFF7F0D5),
+                    disabledForegroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DriverDetail extends StatelessWidget {
+  const _DriverDetail({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.paleGreen,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.green, size: 18),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 9, color: AppColors.muted),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _showDriverCard(BuildContext context) {
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const _DriverCardContent()));
+}
+
 class UberHandoffPreview extends StatelessWidget {
   const UberHandoffPreview({super.key});
 
@@ -899,9 +2325,7 @@ class _UberHandoffSheetContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: preview
-                        ? null
-                        : () => _showPrototypeMessage(context),
+                    onPressed: preview ? null : () => _showDriverCard(context),
                     icon: const Icon(Icons.translate_rounded, size: 17),
                     label: const Text('Driver card'),
                     style: OutlinedButton.styleFrom(
