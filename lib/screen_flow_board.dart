@@ -28,6 +28,16 @@ class ScreenFlowBoard extends StatelessWidget {
             const Positioned(left: 32, top: 25, child: _BoardTitle()),
             const Positioned(
               left: 40,
+              top: 126,
+              child: _FlowNode(
+                number: '00',
+                title: 'NextMate Splash',
+                subtitle: '앱 상태 자동 확인',
+                icon: Icons.route_rounded,
+              ),
+            ),
+            const Positioned(
+              left: 40,
               top: 292,
               child: _FlowNode(
                 number: '01',
@@ -48,12 +58,22 @@ class ScreenFlowBoard extends StatelessWidget {
               ),
             ),
             const Positioned(
+              left: 300,
+              top: 314,
+              child: _FlowNode(
+                number: '01A',
+                title: 'Trip Setup',
+                subtitle: '여행 날짜 · 숙소 등록',
+                icon: Icons.calendar_month_rounded,
+              ),
+            ),
+            const Positioned(
               left: 560,
               top: 64,
               child: _FlowNode(
                 number: '03',
-                title: 'Uber Confirmation',
-                subtitle: '승차 · 하차 위치 확인',
+                title: 'Uber Handoff Sheet',
+                subtitle: '출발지 · 목적지 최종 확인',
                 icon: Icons.local_taxi_rounded,
               ),
             ),
@@ -273,10 +293,13 @@ class _FlowLabels extends StatelessWidget {
     return const Stack(
       children: [
         Positioned(left: 217, top: 190, child: _EdgeLabel('Plan next move')),
+        Positioned(left: 148, top: 254, child: _EdgeLabel('Active trip')),
+        Positioned(left: 225, top: 332, child: _EdgeLabel('New trip')),
+        Positioned(left: 324, top: 455, child: _EdgeLabel('Add places')),
         Positioned(left: 365, top: 265, child: _EdgeLabel('Prepare an Uber')),
         Positioned(left: 475, top: 110, child: _EdgeLabel('Uber Taxi')),
         Positioned(left: 470, top: 300, child: _EdgeLabel('Public transit')),
-        Positioned(left: 742, top: 55, child: _EdgeLabel('Open Uber')),
+        Positioned(left: 724, top: 55, child: _EdgeLabel('Continue in Uber')),
         Positioned(left: 727, top: 174, child: _EdgeLabel('Show to driver')),
         Positioned(left: 742, top: 360, child: _EdgeLabel('Start guidance')),
         Positioned(left: 204, top: 470, child: _EdgeLabel('View itinerary')),
@@ -373,6 +396,9 @@ class _FlowPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     _arrow(canvas, const Offset(230, 318), const Offset(300, 170), paint);
+    _arrow(canvas, const Offset(135, 234), const Offset(135, 292), paint);
+    _arrow(canvas, const Offset(230, 202), const Offset(300, 366), paint);
+    _arrow(canvas, const Offset(395, 422), const Offset(395, 494), paint);
     _arrow(canvas, const Offset(230, 326), const Offset(560, 116), paint);
     _arrow(canvas, const Offset(490, 153), const Offset(560, 116), paint);
     _arrow(canvas, const Offset(490, 184), const Offset(560, 350), paint);

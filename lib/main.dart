@@ -10,7 +10,7 @@ class TripProjectApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TripProject UI Gallery',
+      title: 'NextMate UI Gallery',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -59,14 +59,20 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
   }
 
   static const variants = [
+    _VariantInfo('00', 'Splash', '앱 실행과 여행 상태 확인'),
+    _VariantInfo('01', 'Plan trip', '여행 날짜와 숙소 먼저 등록'),
+    _VariantInfo('02', 'Taxi handoff', '출발지와 목적지 최종 확인'),
     _VariantInfo('A', 'Next move', '출발 시각과 다음 행동 중심'),
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
   ];
 
   Widget _screen(int index) => switch (index) {
-    0 => const NextMoveHome(),
-    1 => const TimelineHome(),
+    0 => const SplashScreenPreview(),
+    1 => const TripSetupScreen(),
+    2 => const UberHandoffPreview(),
+    3 => const NextMoveHome(),
+    4 => const TimelineHome(),
     _ => const MapFirstHome(),
   };
 
@@ -171,7 +177,7 @@ class _GalleryHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TripProject · Travel Home',
+                      'NextMate · UI Gallery',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -185,13 +191,16 @@ class _GalleryHeader extends StatelessWidget {
                 ),
               ),
               const Text(
-                '390 × 844',
+                'Product prototype',
                 style: TextStyle(fontSize: 12, color: AppColors.muted),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               SegmentedButton<bool>(
                 showSelectedIcon: false,
@@ -210,21 +219,23 @@ class _GalleryHeader extends StatelessWidget {
                 selected: {flowMode},
                 onSelectionChanged: (value) => onModeChanged(value.first),
               ),
-              const Spacer(),
               if (showSelector && !flowMode)
                 SegmentedButton<int>(
                   showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(value: 0, label: Text('A')),
-                    ButtonSegment(value: 1, label: Text('B')),
-                    ButtonSegment(value: 2, label: Text('C')),
+                    ButtonSegment(value: 0, label: Text('00')),
+                    ButtonSegment(value: 1, label: Text('01')),
+                    ButtonSegment(value: 2, label: Text('02')),
+                    ButtonSegment(value: 3, label: Text('A')),
+                    ButtonSegment(value: 4, label: Text('B')),
+                    ButtonSegment(value: 5, label: Text('C')),
                   ],
                   selected: {selected},
                   onSelectionChanged: (value) => onSelected(value.first),
                 )
               else
                 Text(
-                  flowMode ? '버튼 → 화면 연결도' : '3 concepts',
+                  flowMode ? '버튼 → 화면 연결도' : '6 screens',
                   style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
             ],
@@ -304,6 +315,793 @@ class _Preview extends StatelessWidget {
       ),
     );
   }
+}
+
+class SplashScreenPreview extends StatelessWidget {
+  const SplashScreenPreview({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.deepGreen,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F0D5),
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 26,
+                          offset: Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: const _NextMateMark(),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'NextMate',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.7,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your next move, made local.',
+                    style: TextStyle(
+                      color: Color(0xFFBFD1C9),
+                      fontSize: 13,
+                      letterSpacing: .2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 28,
+              child: Text(
+                'TRAVEL WITH CONFIDENCE',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF8EACA0),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.8,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NextMateMark extends StatelessWidget {
+  const _NextMateMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _NextMateMarkPainter(),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _NextMateMarkPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final routePaint = Paint()
+      ..color = AppColors.deepGreen
+      ..strokeWidth = 5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final dotPaint = Paint()..color = AppColors.green;
+    final start = Offset(size.width * .28, size.height * .66);
+    final end = Offset(size.width * .72, size.height * .34);
+    final route = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(
+        size.width * .28,
+        size.height * .27,
+        size.width * .72,
+        size.height * .73,
+        end.dx,
+        end.dy,
+      );
+    canvas.drawPath(route, routePaint);
+    canvas.drawCircle(start, 7, dotPaint);
+    canvas.drawCircle(end, 7, dotPaint);
+    canvas.drawCircle(start, 2.5, Paint()..color = const Color(0xFFF7F0D5));
+    canvas.drawCircle(end, 2.5, Paint()..color = const Color(0xFFF7F0D5));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class TripSetupScreen extends StatefulWidget {
+  const TripSetupScreen({super.key});
+
+  @override
+  State<TripSetupScreen> createState() => _TripSetupScreenState();
+}
+
+class _TripSetupScreenState extends State<TripSetupScreen> {
+  int startDay = 14;
+  int endDay = 18;
+
+  void _selectDay(int day) {
+    setState(() {
+      if (day < startDay || startDay != endDay) {
+        startDay = day;
+        endDay = day;
+      } else {
+        endDay = day;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.paleGreen,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.deepGreen,
+                  size: 20,
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                'New trip',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              const Spacer(),
+              const SizedBox(width: 40),
+            ],
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'When will you be\nin Seoul?',
+            style: TextStyle(
+              fontSize: 28,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.5,
+            ),
+          ),
+          const SizedBox(height: 9),
+          const Text(
+            '먼저 여행 날짜와 머무를 숙소를 알려주세요.',
+            style: TextStyle(fontSize: 13, color: AppColors.muted),
+          ),
+          const SizedBox(height: 18),
+          const _SetupProgress(),
+          const SizedBox(height: 18),
+          _TripCalendar(
+            startDay: startDay,
+            endDay: endDay,
+            onDaySelected: _selectDay,
+          ),
+          const SizedBox(height: 14),
+          const Text('Where are you staying?', style: _sectionTitle),
+          const SizedBox(height: 9),
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => _showPrototypeMessage(context),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: const Row(
+                children: [
+                  _ContainerIcon(icon: Icons.hotel_rounded),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'L7 Myeongdong',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '137 Toegye-ro · 서울 중구',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.edit_outlined, size: 18, color: AppColors.green),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F0D5),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.lightbulb_outline_rounded, size: 17),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '숙소를 기준으로 매일 첫 경로와 귀가 경로를 추천해요.',
+                    style: TextStyle(fontSize: 11, height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PrimaryAction(
+            label: 'Next · Add places',
+            icon: Icons.arrow_forward_rounded,
+            background: AppColors.green,
+            foreground: Colors.white,
+            onTap: () => _showPrototypeMessage(context),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetupProgress extends StatelessWidget {
+  const _SetupProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _step('1', 'Dates', true),
+        _line(true),
+        _step('2', 'Stay', true),
+        _line(false),
+        _step('3', 'Places', false),
+      ],
+    );
+  }
+
+  Widget _step(String number, String label, bool active) => Expanded(
+    child: Column(
+      children: [
+        Container(
+          width: 25,
+          height: 25,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active ? AppColors.deepGreen : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: active ? AppColors.deepGreen : AppColors.line,
+            ),
+          ),
+          child: Text(
+            number,
+            style: TextStyle(
+              color: active ? Colors.white : AppColors.muted,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            color: active ? AppColors.ink : AppColors.muted,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _line(bool active) => Container(
+    width: 36,
+    height: 1.5,
+    margin: const EdgeInsets.only(bottom: 16),
+    color: active ? AppColors.green : AppColors.line,
+  );
+}
+
+class _TripCalendar extends StatelessWidget {
+  const _TripCalendar({
+    required this.startDay,
+    required this.endDay,
+    required this.onDaySelected,
+  });
+
+  final int startDay;
+  final int endDay;
+  final ValueChanged<int> onDaySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const days = <int?>[
+      null,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      null,
+      null,
+      null,
+      null,
+    ];
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 11),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.chevron_left_rounded, size: 20),
+              Expanded(
+                child: Text(
+                  'September 2026',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 20),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              for (final label in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 9, color: AppColors.muted),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisExtent: 31,
+            ),
+            itemCount: days.length,
+            itemBuilder: (context, index) {
+              final day = days[index];
+              if (day == null) return const SizedBox.shrink();
+              final endpoint = day == startDay || day == endDay;
+              final within = day >= startDay && day <= endDay;
+              return InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => onDaySelected(day),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: endpoint
+                        ? AppColors.deepGreen
+                        : within
+                        ? AppColors.paleGreen
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: endpoint ? FontWeight.w800 : FontWeight.w500,
+                      color: endpoint ? Colors.white : AppColors.ink,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(
+                Icons.calendar_month_rounded,
+                size: 15,
+                color: AppColors.green,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'Sep $startDay – $endDay  ·  ${endDay - startDay + 1} days',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.green,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class UberHandoffPreview extends StatelessWidget {
+  const UberHandoffPreview({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const NextMoveHome(),
+        Positioned.fill(
+          child: ColoredBox(color: Colors.black.withValues(alpha: .38)),
+        ),
+        const Align(
+          alignment: Alignment.bottomCenter,
+          child: _UberHandoffSheetContent(preview: true),
+        ),
+      ],
+    );
+  }
+}
+
+class _UberHandoffSheetContent extends StatelessWidget {
+  const _UberHandoffSheetContent({this.preview = false});
+
+  final bool preview;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD7DBD8),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 17),
+            const Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ready to open Uber?',
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Check your pickup and destination first.',
+                        style: TextStyle(fontSize: 11, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                _UberBadge(),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const _HandoffRoute(),
+            const SizedBox(height: 13),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.paleGreen,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 17,
+                    color: AppColors.green,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Destination coordinates and Korean address are ready.',
+                      style: TextStyle(fontSize: 10.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: preview
+                        ? null
+                        : () => _showPrototypeMessage(context),
+                    icon: const Icon(Icons.translate_rounded, size: 17),
+                    label: const Text('Driver card'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.ink,
+                      disabledForegroundColor: AppColors.ink,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      side: const BorderSide(color: AppColors.line),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: preview
+                        ? null
+                        : () => _showPrototypeMessage(context),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                    label: const Text('Continue in Uber'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.ink,
+                      disabledBackgroundColor: AppColors.ink,
+                      disabledForegroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
+            const Center(
+              child: Text(
+                'Fare, vehicle selection and payment continue in Uber.',
+                style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UberBadge extends StatelessWidget {
+  const _UberBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: const Text(
+        'UBER',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: .8,
+        ),
+      ),
+    );
+  }
+}
+
+class _HandoffRoute extends StatelessWidget {
+  const _HandoffRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9F7),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(padding: EdgeInsets.only(top: 5), child: _RouteDots()),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RouteAddress(
+                  label: 'PICKUP',
+                  title: 'Current location',
+                  detail: 'Bukchon-ro 5-gil · GPS updated now',
+                ),
+                SizedBox(height: 15),
+                _RouteAddress(
+                  label: 'DESTINATION',
+                  title: 'MMCA Seoul',
+                  detail: '국립현대미술관 서울 · Main entrance',
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.edit_outlined, size: 17, color: AppColors.green),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteDots extends StatelessWidget {
+  const _RouteDots();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 16,
+      height: 73,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(width: 1.5, height: 53, color: const Color(0xFFBFC7C2)),
+          const Positioned(
+            top: 0,
+            child: Icon(
+              Icons.my_location_rounded,
+              size: 15,
+              color: AppColors.green,
+            ),
+          ),
+          const Positioned(
+            bottom: 0,
+            child: Icon(
+              Icons.location_on_rounded,
+              size: 17,
+              color: AppColors.deepGreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteAddress extends StatelessWidget {
+  const _RouteAddress({
+    required this.label,
+    required this.title,
+    required this.detail,
+  });
+
+  final String label;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 8,
+            color: AppColors.muted,
+            fontWeight: FontWeight.w800,
+            letterSpacing: .7,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+        ),
+        Text(
+          detail,
+          style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+        ),
+      ],
+    );
+  }
+}
+
+void _showUberHandoff(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: .42),
+    builder: (_) =>
+        const SafeArea(top: false, child: _UberHandoffSheetContent()),
+  );
 }
 
 class NextMoveHome extends StatelessWidget {
@@ -409,7 +1207,7 @@ class NextMoveHome extends StatelessWidget {
                     icon: Icons.local_taxi_rounded,
                     background: const Color(0xFFF7F0D5),
                     foreground: AppColors.ink,
-                    onTap: () => _showPrototypeMessage(context),
+                    onTap: () => _showUberHandoff(context),
                   ),
                 ],
               ),
@@ -771,7 +1569,7 @@ class MapFirstHome extends StatelessWidget {
                   icon: Icons.arrow_forward_rounded,
                   background: AppColors.green,
                   foreground: Colors.white,
-                  onTap: () => _showPrototypeMessage(context),
+                  onTap: () => _showUberHandoff(context),
                 ),
               ],
             ),
