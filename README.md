@@ -8,8 +8,10 @@ for the in-trip home screen:
 - **01 · Plan trip** — selects travel dates and the traveler's accommodation.
 - **02 · Stay planner** — splits nights across stays and adds nearby landmarks.
 - **03 · Add stay** — searches a stay, adjusts the entrance pin, and assigns nights.
-- **04 · Taxi handoff** — confirms pickup and destination before opening Uber.
-- **05 · Driver card** — shows the verified destination in the driver's language.
+- **04 · Day plan** — keeps a flexible place order while checking opening hours.
+- **05 · Transit guide** — gives tourists step-by-step station and boarding help.
+- **06 · Taxi handoff** — confirms pickup and destination before opening Uber.
+- **07 · Driver card** — shows the verified destination in the driver's language.
 - **A · Next move** — emphasizes the next destination and departure time.
 - **B · Day timeline** — emphasizes the itinerary and current progress.
 - **C · Live map** — emphasizes location and route comparison.
@@ -20,8 +22,8 @@ for the in-trip home screen:
 flutter run -d chrome
 ```
 
-On a wide browser window, all nine mobile frames appear side by side. On a
-narrow window or device, use the 00/01/02/03/04/05/A/B/C selector in the header.
+On a wide browser window, all eleven mobile frames appear side by side. On a
+narrow window or device, use the 00/01/02/03/04/05/06/07/A/B/C selector in the header.
 
 Use the **Flow map** tab to see which button connects each internal screen or
 external app. The same map is documented in [`docs/screen-flow.md`](docs/screen-flow.md).

@@ -124,7 +124,7 @@ class ScreenFlowBoard extends StatelessWidget {
               child: _FlowNode(
                 number: '07',
                 title: 'Itinerary',
-                subtitle: '오늘의 전체 일정',
+                subtitle: '느슨한 순서 · 운영시간 확인',
                 icon: Icons.view_timeline_rounded,
               ),
             ),

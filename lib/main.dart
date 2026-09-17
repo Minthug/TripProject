@@ -71,8 +71,10 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     _VariantInfo('01', 'Plan trip', '여행 날짜와 숙소 먼저 등록'),
     _VariantInfo('02', 'Stay planner', '다중 숙소와 주변 명소로 일정 구성'),
     _VariantInfo('03', 'Add stay', '지도에서 숙소 위치와 입구 확인'),
-    _VariantInfo('04', 'Taxi handoff', '출발지와 목적지 최종 확인'),
-    _VariantInfo('05', 'Driver card', '기사에게 현지어 목적지 표시'),
+    _VariantInfo('04', 'Day plan', '운영시간 중심의 느슨한 하루 일정'),
+    _VariantInfo('05', 'Transit guide', '관광객용 단계별 대중교통 안내'),
+    _VariantInfo('06', 'Taxi handoff', '출발지와 목적지 최종 확인'),
+    _VariantInfo('07', 'Driver card', '기사에게 현지어 목적지 표시'),
     _VariantInfo('A', 'Next move', '출발 시각과 다음 행동 중심'),
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
@@ -83,10 +85,12 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     1 => const TripSetupScreen(),
     2 => const StayBasedPlannerScreen(),
     3 => const AddStayMapScreen(),
-    4 => const UberHandoffPreview(),
-    5 => const DriverCardPreview(),
-    6 => const NextMoveHome(),
-    7 => const TimelineHome(),
+    4 => const FlexibleDayPlanScreen(),
+    5 => const TouristTransitGuideScreen(),
+    6 => const UberHandoffPreview(),
+    7 => const DriverCardPreview(),
+    8 => const NextMoveHome(),
+    9 => const TimelineHome(),
     _ => const MapFirstHome(),
   };
 
@@ -243,16 +247,18 @@ class _GalleryHeader extends StatelessWidget {
                     ButtonSegment(value: 3, label: Text('03')),
                     ButtonSegment(value: 4, label: Text('04')),
                     ButtonSegment(value: 5, label: Text('05')),
-                    ButtonSegment(value: 6, label: Text('A')),
-                    ButtonSegment(value: 7, label: Text('B')),
-                    ButtonSegment(value: 8, label: Text('C')),
+                    ButtonSegment(value: 6, label: Text('06')),
+                    ButtonSegment(value: 7, label: Text('07')),
+                    ButtonSegment(value: 8, label: Text('A')),
+                    ButtonSegment(value: 9, label: Text('B')),
+                    ButtonSegment(value: 10, label: Text('C')),
                   ],
                   selected: {selected},
                   onSelectionChanged: (value) => onSelected(value.first),
                 )
               else
                 Text(
-                  flowMode ? '버튼 → 화면 연결도' : '9 screens',
+                  flowMode ? '버튼 → 화면 연결도' : '11 screens',
                   style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
             ],
@@ -1949,6 +1955,1040 @@ class _StayDateBox extends StatelessWidget {
   }
 }
 
+class FlexibleDayPlanScreen extends StatefulWidget {
+  const FlexibleDayPlanScreen({super.key});
+
+  @override
+  State<FlexibleDayPlanScreen> createState() => _FlexibleDayPlanScreenState();
+}
+
+class _FlexibleDayPlanScreenState extends State<FlexibleDayPlanScreen> {
+  final List<int> order = [0, 1, 2, 3];
+  bool palaceMoved = false;
+  bool orderSuggested = false;
+
+  static const places = [
+    _DayPlace(
+      id: 0,
+      title: 'MMCA Seoul',
+      local: '국립현대미술관 서울',
+      hours: 'Open · Closes 6:00 PM',
+      note: 'Go first · Last admission 5:00 PM',
+      availability: _PlaceAvailability.closing,
+      icon: Icons.account_balance_rounded,
+    ),
+    _DayPlace(
+      id: 1,
+      title: 'Gyeongbokgung Palace',
+      local: '경복궁',
+      hours: 'Closed on Tuesdays',
+      note: 'Open Wed 9:00 AM–6:00 PM',
+      availability: _PlaceAvailability.closed,
+      icon: Icons.temple_buddhist_rounded,
+    ),
+    _DayPlace(
+      id: 2,
+      title: 'Myeongdong Cathedral',
+      local: '명동성당',
+      hours: 'Open · Closes 7:00 PM',
+      note: 'No fixed visit time',
+      availability: _PlaceAvailability.open,
+      icon: Icons.church_rounded,
+    ),
+    _DayPlace(
+      id: 3,
+      title: 'N Seoul Tower',
+      local: '남산서울타워',
+      hours: 'Open · Closes 11:00 PM',
+      note: 'Good for the evening',
+      availability: _PlaceAvailability.open,
+      icon: Icons.landscape_rounded,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleOrder = order
+        .where((id) => !(palaceMoved && id == 1))
+        .toList();
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.paleGreen,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.arrow_back_rounded, size: 20),
+              ),
+              const SizedBox(width: 11),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tuesday, Sep 15',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Seoul · Today',
+                      style: TextStyle(fontSize: 10, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _showPrototypeMessage(context),
+                icon: const Icon(Icons.more_horiz_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Places for today',
+            style: TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'No timetable. Go at your own pace.',
+            style: TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+          const SizedBox(height: 13),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: palaceMoved
+                  ? AppColors.paleGreen
+                  : const Color(0xFFFFF2D7),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  palaceMoved
+                      ? Icons.check_circle_rounded
+                      : Icons.error_rounded,
+                  size: 17,
+                  color: palaceMoved
+                      ? AppColors.green
+                      : const Color(0xFFC88300),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    palaceMoved
+                        ? 'All places are available today'
+                        : '1 place is closed today',
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (orderSuggested)
+                  const Text(
+                    'Best order applied',
+                    style: TextStyle(fontSize: 8.5, color: AppColors.green),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ReorderableListView.builder(
+              padding: EdgeInsets.zero,
+              buildDefaultDragHandles: false,
+              itemCount: visibleOrder.length,
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex -= 1;
+                  final movedId = visibleOrder.removeAt(oldIndex);
+                  visibleOrder.insert(newIndex, movedId);
+                  final hidden = palaceMoved ? [1] : <int>[];
+                  order
+                    ..clear()
+                    ..addAll(visibleOrder)
+                    ..addAll(hidden);
+                  orderSuggested = false;
+                });
+              },
+              itemBuilder: (context, index) {
+                final place = places[visibleOrder[index]];
+                return Padding(
+                  key: ValueKey(place.id),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _DayPlaceCard(
+                    index: index,
+                    place: place,
+                    onMoveDay: place.availability == _PlaceAvailability.closed
+                        ? () => setState(() => palaceMoved = true)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showPrototypeMessage(context),
+                  icon: const Icon(Icons.add_rounded, size: 17),
+                  label: const Text('Add place'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    side: const BorderSide(color: AppColors.line),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => setState(() => orderSuggested = true),
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: const Text('Suggest order'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.deepGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          _PrimaryAction(
+            label: 'Return to L7 Myeongdong',
+            icon: Icons.home_rounded,
+            background: const Color(0xFFF7F0D5),
+            foreground: AppColors.ink,
+            onTap: () => _showReturnToStaySheet(context),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _PlaceAvailability { open, closing, closed }
+
+class _DayPlace {
+  const _DayPlace({
+    required this.id,
+    required this.title,
+    required this.local,
+    required this.hours,
+    required this.note,
+    required this.availability,
+    required this.icon,
+  });
+
+  final int id;
+  final String title;
+  final String local;
+  final String hours;
+  final String note;
+  final _PlaceAvailability availability;
+  final IconData icon;
+}
+
+class _DayPlaceCard extends StatelessWidget {
+  const _DayPlaceCard({
+    required this.index,
+    required this.place,
+    this.onMoveDay,
+  });
+
+  final int index;
+  final _DayPlace place;
+  final VoidCallback? onMoveDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final closed = place.availability == _PlaceAvailability.closed;
+    final closing = place.availability == _PlaceAvailability.closing;
+    final accent = closed
+        ? const Color(0xFFB64B43)
+        : closing
+        ? const Color(0xFFC88300)
+        : AppColors.green;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: closed ? const Color(0xFFFFF5F3) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: closed ? const Color(0xFFF0C3BE) : AppColors.line,
+        ),
+      ),
+      child: Row(
+        children: [
+          ReorderableDragStartListener(
+            index: index,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 16),
+              child: Icon(
+                Icons.drag_indicator_rounded,
+                size: 18,
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Container(
+            width: 39,
+            height: 39,
+            decoration: BoxDecoration(
+              color: closed ? const Color(0xFFFFE4E0) : AppColors.paleGreen,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(place.icon, size: 19, color: accent),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  place.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  '${place.local} · ${place.hours}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 8.8,
+                    color: closed ? accent : AppColors.muted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  place.note,
+                  style: TextStyle(
+                    fontSize: 8.8,
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onMoveDay != null)
+            TextButton(
+              onPressed: onMoveDay,
+              style: TextButton.styleFrom(
+                foregroundColor: accent,
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                minimumSize: const Size(0, 32),
+              ),
+              child: const Text(
+                'Move to Wed',
+                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800),
+              ),
+            )
+          else
+            const Icon(Icons.chevron_right_rounded, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+void _showReturnToStaySheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _ReturnToStaySheet(),
+  );
+}
+
+class _ReturnToStaySheet extends StatelessWidget {
+  const _ReturnToStaySheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 11, 20, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 17),
+              const Text(
+                'Return to your stay',
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 3),
+              const Text(
+                'L7 Myeongdong · L7 명동 바이 롯데',
+                style: TextStyle(fontSize: 11, color: AppColors.muted),
+              ),
+              const SizedBox(height: 16),
+              _ReturnModeTile(
+                icon: Icons.directions_subway_rounded,
+                title: 'Public transit',
+                detail: '27 min · No transfers',
+                trailing: '₩1,500',
+                recommended: true,
+                onTap: () {
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  navigator.push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          const Scaffold(body: TouristTransitGuideScreen()),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 9),
+              _ReturnModeTile(
+                icon: Icons.local_taxi_rounded,
+                title: 'Uber Taxi',
+                detail: '18 min · Pickup nearby',
+                trailing: 'Open Uber',
+                onTap: () => _showPrototypeMessage(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReturnModeTile extends StatelessWidget {
+  const _ReturnModeTile({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.trailing,
+    required this.onTap,
+    this.recommended = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final String trailing;
+  final VoidCallback onTap;
+  final bool recommended;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: recommended ? AppColors.paleGreen : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: recommended ? AppColors.green : AppColors.line,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.green, size: 21),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      if (recommended) ...[
+                        const Text(
+                          'Recommended',
+                          style: TextStyle(fontSize: 8, color: AppColors.green),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Text(
+                    detail,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              trailing,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TouristTransitGuideScreen extends StatefulWidget {
+  const TouristTransitGuideScreen({super.key});
+
+  @override
+  State<TouristTransitGuideScreen> createState() =>
+      _TouristTransitGuideScreenState();
+}
+
+class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
+  int currentStep = 0;
+
+  static const steps = [
+    _TransitStep(
+      title: 'Walk to Exit 6',
+      local: '을지로입구역 6번 출구',
+      detail: '4 min · 280 m',
+      icon: Icons.directions_walk_rounded,
+    ),
+    _TransitStep(
+      title: 'Follow green Line 2 signs',
+      local: '2호선 · 시청·홍대입구 방면',
+      detail: 'Not Jamsil · Seongsu direction',
+      icon: Icons.directions_subway_rounded,
+    ),
+    _TransitStep(
+      title: 'Ride 1 stop',
+      local: '을지로입구 → 시청',
+      detail: 'We will alert you before your stop',
+      icon: Icons.train_rounded,
+    ),
+    _TransitStep(
+      title: 'Leave through Exit 7',
+      local: '시청역 7번 출구',
+      detail: 'Elevator available at Exit 8',
+      icon: Icons.exit_to_app_rounded,
+    ),
+    _TransitStep(
+      title: 'Walk to L7 Myeongdong',
+      local: 'L7 명동 바이 롯데',
+      detail: '3 min · 190 m',
+      icon: Icons.hotel_rounded,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final step = steps[currentStep];
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              InkWell(
+                onTap: Navigator.of(context).canPop()
+                    ? () => Navigator.pop(context)
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.paleGreen,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded, size: 20),
+                ),
+              ),
+              const SizedBox(width: 11),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Back to L7 Myeongdong',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '27 min · Subway Line 2',
+                      style: TextStyle(fontSize: 10, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.paleGreen,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.offline_pin_rounded,
+                      size: 13,
+                      color: AppColors.green,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Saved',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 17),
+          _TransitProgress(currentStep: currentStep, total: steps.length),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.deepGreen,
+              borderRadius: BorderRadius.circular(23),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'NOW · STEP ${currentStep + 1} OF ${steps.length}',
+                  style: const TextStyle(
+                    color: Color(0xFFAED8C4),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Icon(step.icon, color: AppColors.yellow, size: 25),
+                const SizedBox(height: 9),
+                Text(
+                  step.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    height: 1.15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  step.local,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  step.detail,
+                  style: const TextStyle(
+                    color: Color(0xFFC5D6CE),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 11),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Row(
+              children: [
+                _LineBadge(),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Toward City Hall · Hongdae',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        '시청 · 홍대입구 방면',
+                        style: TextStyle(fontSize: 10, color: AppColors.green),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Do not take Jamsil · Seongsu direction',
+                        style: TextStyle(fontSize: 9, color: Color(0xFFB64B43)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 13),
+          const Row(
+            children: [
+              Text('Full route', style: _sectionTitle),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'T-money · Tap in & out · ₩1,500',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(fontSize: 8.5, color: AppColors.muted),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: steps.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 5),
+              itemBuilder: (context, index) => _TransitStepRow(
+                number: index + 1,
+                step: steps[index],
+                active: index == currentStep,
+                done: index < currentStep,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showTransitHelp(context),
+                  icon: const Icon(Icons.translate_rounded, size: 17),
+                  label: const Text('Need help'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.line),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: () => setState(() {
+                    if (currentStep < steps.length - 1) currentStep += 1;
+                  }),
+                  icon: const Icon(Icons.check_rounded, size: 17),
+                  label: Text(
+                    currentStep == steps.length - 1
+                        ? 'Arrived'
+                        : _nextStepLabel(currentStep),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _nextStepLabel(int step) => switch (step) {
+    0 => 'I entered the station',
+    1 => 'I found the platform',
+    2 => 'I am on the train',
+    3 => 'I left the station',
+    _ => 'I arrived',
+  };
+}
+
+class _TransitStep {
+  const _TransitStep({
+    required this.title,
+    required this.local,
+    required this.detail,
+    required this.icon,
+  });
+
+  final String title;
+  final String local;
+  final String detail;
+  final IconData icon;
+}
+
+class _TransitProgress extends StatelessWidget {
+  const _TransitProgress({required this.currentStep, required this.total});
+
+  final int currentStep;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(total, (index) {
+        final active = index <= currentStep;
+        return Expanded(
+          child: Container(
+            height: 4,
+            margin: EdgeInsets.only(right: index == total - 1 ? 0 : 5),
+            decoration: BoxDecoration(
+              color: active ? AppColors.green : AppColors.line,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _LineBadge extends StatelessWidget {
+  const _LineBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 39,
+      height: 39,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: Color(0xFF00A84D),
+        shape: BoxShape.circle,
+      ),
+      child: const Text(
+        '2',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _TransitStepRow extends StatelessWidget {
+  const _TransitStepRow({
+    required this.number,
+    required this.step,
+    required this.active,
+    required this.done,
+  });
+
+  final int number;
+  final _TransitStep step;
+  final bool active;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: active ? AppColors.paleGreen : Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: active ? AppColors.green : AppColors.line),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 25,
+            height: 25,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: done
+                  ? AppColors.green
+                  : active
+                  ? AppColors.deepGreen
+                  : const Color(0xFFF0F2EF),
+              shape: BoxShape.circle,
+            ),
+            child: done
+                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                : Text(
+                    '$number',
+                    style: TextStyle(
+                      color: active ? Colors.white : AppColors.muted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  step.local,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            step.icon,
+            size: 16,
+            color: active ? AppColors.green : AppColors.muted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+void _showTransitHelp(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _TransitHelpSheet(),
+  );
+}
+
+class _TransitHelpSheet extends StatelessWidget {
+  const _TransitHelpSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.deepGreen,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '역무원에게 보여주세요',
+                style: TextStyle(
+                  color: Color(0xFFAED8C4),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '2호선 시청·홍대입구 방면\n타는 곳이 어디인가요?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  height: 1.3,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Where is Line 2 toward City Hall and Hongdae?',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _showPrototypeMessage(context),
+                  icon: const Icon(Icons.volume_up_rounded),
+                  label: const Text('Play Korean audio'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7F0D5),
+                    foregroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class DriverCardPreview extends StatelessWidget {
   const DriverCardPreview({super.key});
 
@@ -2639,17 +3679,18 @@ class NextMoveHome extends StatelessWidget {
             const SizedBox(height: 18),
             const Text('Other ways to get there', style: _sectionTitle),
             const SizedBox(height: 10),
-            const Row(
+            Row(
               children: [
                 Expanded(
                   child: _ModeTile(
                     icon: Icons.directions_subway_rounded,
                     title: 'Transit',
                     detail: '24 min · Direct',
+                    onTap: () => _openTransitGuide(context),
                   ),
                 ),
-                SizedBox(width: 10),
-                Expanded(
+                const SizedBox(width: 10),
+                const Expanded(
                   child: _ModeTile(
                     icon: Icons.directions_walk_rounded,
                     title: 'Walk',
@@ -2972,20 +4013,22 @@ class MapFirstHome extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const _RouteChoice(
+                _RouteChoice(
                   selected: true,
                   icon: Icons.local_taxi_rounded,
                   title: 'Uber Taxi',
                   detail: '17 min',
                   trailing: 'Recommended',
+                  onTap: () => _showUberHandoff(context),
                 ),
                 const SizedBox(height: 9),
-                const _RouteChoice(
+                _RouteChoice(
                   selected: false,
                   icon: Icons.directions_subway_rounded,
                   title: 'Public transit',
                   detail: '24 min · No transfers',
                   trailing: '₩1,500',
+                  onTap: () => _openTransitGuide(context),
                 ),
                 const SizedBox(height: 14),
                 _PrimaryAction(
@@ -3132,35 +4175,41 @@ class _ModeTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.detail,
+    this.onTap,
   });
   final IconData icon;
   final String title;
   final String detail;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppColors.green, size: 22),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            detail,
-            style: const TextStyle(fontSize: 10, color: AppColors.muted),
-          ),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.green, size: 22),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              detail,
+              style: const TextStyle(fontSize: 10, color: AppColors.muted),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3541,68 +4590,85 @@ class _RouteChoice extends StatelessWidget {
     required this.title,
     required this.detail,
     required this.trailing,
+    this.onTap,
   });
   final bool selected;
   final IconData icon;
   final String title;
   final String detail;
   final String trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.paleGreen : Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: selected ? AppColors.green : AppColors.line,
-          width: selected ? 1.5 : 1,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(17),
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.paleGreen : Colors.white,
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(
+            color: selected ? AppColors.green : AppColors.line,
+            width: selected ? 1.5 : 1,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 20, color: AppColors.green),
             ),
-            child: Icon(icon, size: 20, color: AppColors.green),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  detail,
-                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    detail,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            trailing,
-            style: TextStyle(
-              fontSize: 10,
-              color: selected ? AppColors.green : AppColors.muted,
-              fontWeight: FontWeight.w800,
+            Text(
+              trailing,
+              style: TextStyle(
+                fontSize: 10,
+                color: selected ? AppColors.green : AppColors.muted,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+void _openTransitGuide(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: TouristTransitGuideScreen()),
+    ),
+  );
 }
 
 void _showPrototypeMessage(BuildContext context) {
