@@ -19,11 +19,17 @@ void main() {
     expect(find.text('Stay planner'), findsOneWidget);
     expect(find.text('Plan around your stays'), findsOneWidget);
     expect(find.text('Add stay'), findsOneWidget);
+    expect(find.text('Trip overview'), findsOneWidget);
+    expect(find.text('Your whole trip'), findsOneWidget);
     expect(find.text('Use this location'), findsOneWidget);
     expect(find.text('Day plan'), findsOneWidget);
     expect(find.text('No timetable. Go at your own pace.'), findsOneWidget);
+    expect(find.text('Add place'), findsWidgets);
+    expect(find.text('Near L7 Myeongdong'), findsOneWidget);
     expect(find.text('Transit guide'), findsOneWidget);
     expect(find.text('Walk to Exit 6'), findsWidgets);
+    expect(find.text('Route comparison'), findsOneWidget);
+    expect(find.text('Compare time & cost'), findsWidgets);
     expect(find.text('Taxi handoff'), findsOneWidget);
     expect(find.text('Ready to open Uber?'), findsOneWidget);
     expect(find.text('Driver card'), findsWidgets);
@@ -53,10 +59,33 @@ void main() {
     expect(find.text('+ Stay'), findsOneWidget);
     expect(find.text('New trip'), findsOneWidget);
     expect(find.text('Build itinerary'), findsOneWidget);
+    expect(find.text('Trip Overview'), findsOneWidget);
+    expect(find.text('Day Plan'), findsOneWidget);
+    expect(find.text('Day card'), findsOneWidget);
     expect(find.text('Active trip'), findsOneWidget);
     expect(find.text('Uber Handoff Sheet'), findsOneWidget);
     expect(find.text('Continue in Uber'), findsOneWidget);
     expect(find.text('Live Transit Guide'), findsOneWidget);
+  });
+
+  testWidgets('gallery text size controls update the screen previews', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const TripProjectApp());
+
+    expect(find.text('115%'), findsOneWidget);
+    await tester.tap(find.text('A+'));
+    await tester.pump();
+    expect(find.text('130%'), findsOneWidget);
+
+    await tester.tap(find.text('A−'));
+    await tester.pump();
+    expect(find.text('115%'), findsOneWidget);
   });
 
   testWidgets('Prepare an Uber opens the handoff bottom sheet', (tester) async {
@@ -105,6 +134,36 @@ void main() {
     await tester.tap(find.text('+ Add').first);
     await tester.pump();
     expect(find.text('Build 2 place itinerary'), findsOneWidget);
+
+    await tester.tap(find.text('Build 2 place itinerary'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your whole trip'), findsOneWidget);
+  });
+
+  testWidgets('trip overview shows stays move days open time and conflicts', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: TripOverviewScreen())),
+    );
+
+    expect(find.text('Sep 14–18 · 4 nights'), findsOneWidget);
+    expect(find.text('L7 Myeongdong'), findsWidgets);
+    expect(find.text('L7 → Bukchon Hanok'), findsOneWidget);
+    expect(find.text('MOVE DAY'), findsOneWidget);
+    expect(find.text('Morning is open'), findsWidgets);
+    expect(find.text('Gyeongbokgung is closed on Tuesdays'), findsOneWidget);
+
+    await tester.tap(find.text('Issues'));
+    await tester.pump();
+    expect(find.text('Move to Bukchon'), findsNothing);
+    expect(find.text('Gyeongbokgung is closed on Tuesdays'), findsOneWidget);
+    expect(find.text('Two reservations overlap by 30 minutes'), findsOneWidget);
   });
 
   testWidgets('add stay searches map location and opens date assignment', (
@@ -174,11 +233,30 @@ void main() {
     );
 
     expect(find.text('을지로입구역 6번 출구'), findsWidgets);
-    expect(find.text('Do not take Jamsil · Seongsu direction'), findsOneWidget);
+    expect(find.text('Board at Euljiro 1-ga · Platform 2'), findsOneWidget);
+    expect(find.text('Euljiro 3-ga'), findsWidgets);
+    expect(find.text('Anguk 1'), findsOneWidget);
+    expect(
+      find.text('Do not take City Hall · Hongdae direction'),
+      findsOneWidget,
+    );
+    expect(find.text('Subway map'), findsOneWidget);
+    expect(find.text('Euljiro 1-ga'), findsOneWidget);
+    expect(find.text('Anguk · Exit 1'), findsOneWidget);
 
     await tester.tap(find.text('I entered the station'));
     await tester.pump();
     expect(find.text('Follow green Line 2 signs'), findsWidgets);
+    expect(find.text('Platform 2 · Board near car 4-2'), findsOneWidget);
+
+    await tester.tap(find.text('I found the platform'));
+    await tester.pump();
+    expect(find.text('1 stop remaining'), findsOneWidget);
+
+    await tester.tap(find.text('I got off to transfer'));
+    await tester.pump();
+    expect(find.text('Transfer here · Euljiro 3-ga'), findsOneWidget);
+    expect(find.text('Do not take Ogeum direction'), findsOneWidget);
 
     await tester.tap(find.text('Need help'));
     await tester.pumpAndSettle();
@@ -200,7 +278,129 @@ void main() {
     await tester.tap(find.text('Transit'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Back to L7 Myeongdong'), findsOneWidget);
+    expect(find.text('To MMCA Seoul'), findsOneWidget);
     expect(find.text('Walk to Exit 6'), findsWidgets);
+  });
+
+  testWidgets('compares Uber transit and walking time and cost', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: RouteComparisonScreen())),
+    );
+
+    expect(find.text('Choose how to go'), findsOneWidget);
+    expect(find.text('Uber'), findsOneWidget);
+    expect(find.text('Public transit'), findsOneWidget);
+    expect(find.text('Walk'), findsOneWidget);
+    expect(find.text('17–22 min'), findsOneWidget);
+    expect(find.text('₩13,000–17,000'), findsOneWidget);
+    expect(find.text('24 min'), findsOneWidget);
+    expect(find.text('₩1,500'), findsOneWidget);
+    expect(find.text('31 min'), findsOneWidget);
+    expect(find.text('Free'), findsOneWidget);
+    expect(find.text('View transit steps'), findsOneWidget);
+    expect(find.text('Subway · Line 3'), findsOneWidget);
+    expect(find.text('Line 3 toward Daehwa'), findsOneWidget);
+    expect(find.text('Anguk'), findsOneWidget);
+    expect(find.text('Gyeongbokgung'), findsOneWidget);
+
+    await tester.tap(find.text('Bus · No. 11'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bus 11 toward Seoul Station'), findsOneWidget);
+    expect(find.text('5 stops'), findsWidgets);
+    expect(find.textContaining('Get off at MMCA'), findsOneWidget);
+
+    await tester.tap(find.text('Uber'));
+    await tester.pump();
+    expect(find.text('Prepare Uber'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Prepare Uber'));
+    await tester.tap(find.text('Prepare Uber'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ready to open Uber?'), findsOneWidget);
+  });
+
+  testWidgets('home comparison action opens route comparison', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: NextMoveHome())),
+    );
+    await tester.ensureVisible(find.text('Compare time & cost'));
+    await tester.tap(find.text('Compare time & cost'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choose how to go'), findsOneWidget);
+    expect(find.text('BEST VALUE'), findsOneWidget);
+  });
+
+  testWidgets('place explorer adds open places and reschedules closed places', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: PlaceExplorerScreen())),
+    );
+
+    expect(find.text('1 place saved'), findsOneWidget);
+    await tester.tap(find.text('+ Add').first);
+    await tester.pump();
+    expect(find.text('2 places saved'), findsOneWidget);
+
+    await tester.tap(find.text('Search places in Seoul'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gyeongbokgung Palace').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Closed on Tuesday'), findsWidgets);
+    expect(find.text('Gwanghwamun main gate'), findsOneWidget);
+    expect(find.text('On-site ticket available'), findsOneWidget);
+    expect(find.text('서울특별시 종로구 사직로 161'), findsOneWidget);
+    expect(find.text('Add to itinerary'), findsOneWidget);
+  });
+
+  testWidgets('scheduled place detail can change date and remove the place', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: PlaceExplorerScreen())),
+    );
+
+    await tester.tap(find.text('Myeongdong Cathedral'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('IN YOUR ITINERARY'), findsOneWidget);
+    expect(find.text('Main entrance on Myeongdong-gil'), findsOneWidget);
+    expect(find.text('No reservation needed'), findsOneWidget);
+    expect(find.text('Save itinerary changes'), findsOneWidget);
+
+    await tester.tap(find.text('Wed 16'));
+    await tester.tap(find.text('Save itinerary changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 place saved'), findsOneWidget);
+
+    await tester.tap(find.text('Myeongdong Cathedral'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove from itinerary'));
+    await tester.pumpAndSettle();
+    expect(find.text('0 places saved'), findsOneWidget);
   });
 }

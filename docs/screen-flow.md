@@ -15,8 +15,10 @@ flowchart LR
     Driver[04 Driver Card]
     Transit[05 Transit Routes]
     Guide[06 Live Transit Guide]
-    Itinerary[07 Itinerary]
-    Place[08 Place Detail]
+    Itinerary[07 Trip Overview]
+    Day[07A Day Plan]
+    Place[08 Place Search]
+    Detail[08A Place Detail]
     Profile[09 Profile & Setup]
 
     Splash -->|Active trip| Home
@@ -33,7 +35,10 @@ flowchart LR
     Taxi -->|Continue in Uber| Uber
     Taxi -->|Show to driver| Driver
     Transit -->|Start guidance| Guide
-    Itinerary -->|Select place| Place
+    Itinerary -->|Day card| Day
+    Day -->|Add place| Place
+    Place -->|Place card / map pin| Detail
+    Detail -->|Add or save changes| Itinerary
 ```
 
 ## Navigation rules
@@ -42,19 +47,23 @@ flowchart LR
 |---|---|---|---|
 | NextMate Splash | Active trip detected | Travel Home | Automatic |
 | NextMate Splash | New trip | Stay-based Planner | Internal |
-| Stay-based Planner | Build itinerary | Itinerary | Internal |
+| Stay-based Planner | Build itinerary | Trip Overview | Internal |
 | Stay-based Planner | + Stay | Add Stay Map | Internal |
 | Add Stay Map | Add stay | Stay-based Planner | Internal |
 | Travel Home | Plan next move / route card | Route Comparison | Internal |
 | Travel Home | Prepare an Uber | Uber Handoff Sheet | Bottom sheet |
-| Travel Home | View itinerary | Itinerary | Internal |
+| Travel Home | View itinerary | Trip Overview | Internal |
 | Travel Home | Profile icon | Profile & Setup | Internal |
 | Route Comparison | Uber Taxi | Uber Handoff Sheet | Bottom sheet |
 | Route Comparison | Public transit | Transit Routes | Internal |
 | Uber Handoff Sheet | Continue in Uber | Uber App | External deep link |
 | Uber Handoff Sheet | Driver card | Driver Card | Internal |
 | Transit Routes | Start guidance | Live Transit Guide | Internal |
-| Itinerary | Select place | Place Detail | Internal |
+| Trip Overview | Day card | Day Plan | Internal |
+| Day Plan | Add place | Place Search | Internal |
+| Place Search | Place card or map pin | Place Detail | Bottom sheet |
+| Place Detail | Add to itinerary / Save changes | Day Plan | Internal state update |
+| Place Detail | Remove from itinerary | Place Search or Day Plan | Internal state update |
 
 The Driver Card prioritizes a large local-language request, official local
 address, and entrance name. A smaller back-translation lets the traveler

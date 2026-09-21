@@ -123,8 +123,8 @@ class ScreenFlowBoard extends StatelessWidget {
               top: 494,
               child: _FlowNode(
                 number: '07',
-                title: 'Itinerary',
-                subtitle: '느슨한 순서 · 운영시간 확인',
+                title: 'Trip Overview',
+                subtitle: '전체 날짜 · 숙소 · 충돌',
                 icon: Icons.view_timeline_rounded,
               ),
             ),
@@ -132,15 +132,35 @@ class ScreenFlowBoard extends StatelessWidget {
               left: 560,
               top: 548,
               child: _FlowNode(
-                number: '08',
-                title: 'Place Detail',
-                subtitle: '시간 · 입구 · 메모 수정',
-                icon: Icons.place_rounded,
+                number: '07A',
+                title: 'Day Plan',
+                subtitle: '느슨한 순서 · 운영시간 확인',
+                icon: Icons.today_rounded,
               ),
             ),
             const Positioned(
               left: 850,
               top: 548,
+              child: _FlowNode(
+                number: '08',
+                title: 'Place Search',
+                subtitle: '지도 · 추천 · 장소 검색',
+                icon: Icons.place_rounded,
+              ),
+            ),
+            const Positioned(
+              left: 1060,
+              top: 548,
+              child: _FlowNode(
+                number: '08A',
+                title: 'Place Detail',
+                subtitle: '입구 · 예약 · 일정 편집',
+                icon: Icons.info_outline_rounded,
+              ),
+            ),
+            const Positioned(
+              left: 1060,
+              top: 350,
               child: _FlowNode(
                 number: '02A',
                 title: 'Add Stay Map',
@@ -306,7 +326,7 @@ class _FlowLabels extends StatelessWidget {
         Positioned(left: 148, top: 254, child: _EdgeLabel('Active trip')),
         Positioned(left: 225, top: 332, child: _EdgeLabel('New trip')),
         Positioned(left: 314, top: 455, child: _EdgeLabel('Build itinerary')),
-        Positioned(left: 684, top: 512, child: _EdgeLabel('+ Stay')),
+        Positioned(left: 790, top: 408, child: _EdgeLabel('+ Stay')),
         Positioned(left: 365, top: 265, child: _EdgeLabel('Prepare an Uber')),
         Positioned(left: 475, top: 110, child: _EdgeLabel('Uber Taxi')),
         Positioned(left: 470, top: 300, child: _EdgeLabel('Public transit')),
@@ -314,7 +334,9 @@ class _FlowLabels extends StatelessWidget {
         Positioned(left: 727, top: 174, child: _EdgeLabel('Show to driver')),
         Positioned(left: 742, top: 360, child: _EdgeLabel('Start guidance')),
         Positioned(left: 204, top: 470, child: _EdgeLabel('View itinerary')),
-        Positioned(left: 475, top: 535, child: _EdgeLabel('Select place')),
+        Positioned(left: 475, top: 535, child: _EdgeLabel('Day card')),
+        Positioned(left: 750, top: 574, child: _EdgeLabel('Add place')),
+        Positioned(left: 968, top: 574, child: _EdgeLabel('Place card')),
         Positioned(left: 62, top: 526, child: _EdgeLabel('Profile icon')),
       ],
     );
@@ -410,7 +432,7 @@ class _FlowPainter extends CustomPainter {
     _arrow(canvas, const Offset(135, 234), const Offset(135, 292), paint);
     _arrow(canvas, const Offset(230, 202), const Offset(300, 366), paint);
     _arrow(canvas, const Offset(395, 422), const Offset(395, 494), paint);
-    _arrow(canvas, const Offset(490, 380), const Offset(850, 600), paint);
+    _arrow(canvas, const Offset(490, 380), const Offset(1060, 402), paint);
     _arrow(canvas, const Offset(230, 326), const Offset(560, 116), paint);
     _arrow(canvas, const Offset(490, 153), const Offset(560, 116), paint);
     _arrow(canvas, const Offset(490, 184), const Offset(560, 350), paint);
@@ -424,6 +446,8 @@ class _FlowPainter extends CustomPainter {
     _arrow(canvas, const Offset(750, 366), const Offset(850, 366), paint);
     _arrow(canvas, const Offset(230, 376), const Offset(300, 530), paint);
     _arrow(canvas, const Offset(490, 546), const Offset(560, 600), paint);
+    _arrow(canvas, const Offset(750, 600), const Offset(850, 600), paint);
+    _arrow(canvas, const Offset(1040, 600), const Offset(1060, 600), paint);
     _arrow(canvas, const Offset(135, 396), const Offset(135, 612), paint);
   }
 
