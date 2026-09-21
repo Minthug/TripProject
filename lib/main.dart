@@ -68,6 +68,7 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
   }
 
   static const variants = [
+    _VariantInfo('ON', 'First-run onboarding', '기능·언어·권한·Uber 준비'),
     _VariantInfo('00', 'Splash', '앱 실행과 여행 상태 확인'),
     _VariantInfo('01', 'Plan trip', '여행 날짜와 숙소 먼저 등록'),
     _VariantInfo('02', 'Stay planner', '다중 숙소와 주변 명소로 일정 구성'),
@@ -80,26 +81,31 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     _VariantInfo('09', 'Route comparison', '시간과 비용으로 이동수단 비교'),
     _VariantInfo('10', 'Taxi handoff', '출발지와 목적지 최종 확인'),
     _VariantInfo('11', 'Driver card', '기사에게 현지어 목적지 표시'),
+    _VariantInfo('12', 'Departure alert', '출발·지연·건너뛰기 상태 관리'),
+    _VariantInfo('13', 'Profile & settings', '언어·권한·이동수단 설정'),
     _VariantInfo('A', 'Next move', '출발 시각과 다음 행동 중심'),
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
   ];
 
   Widget _screen(int index) => switch (index) {
-    0 => const SplashScreenPreview(),
-    1 => const TripSetupScreen(),
-    2 => const StayBasedPlannerScreen(),
-    3 => const AddStayMapScreen(),
-    4 => const TripOverviewScreen(),
-    5 => const FlexibleDayPlanScreen(),
-    6 => const PlaceExplorerScreen(),
-    7 => const AttractionDetailScreen(),
-    8 => const TouristTransitGuideScreen(),
-    9 => const RouteComparisonScreen(),
-    10 => const UberHandoffPreview(),
-    11 => const DriverCardPreview(),
-    12 => const NextMoveHome(),
-    13 => const TimelineHome(),
+    0 => const OnboardingScreen(),
+    1 => const SplashScreenPreview(),
+    2 => const TripSetupScreen(),
+    3 => const StayBasedPlannerScreen(),
+    4 => const AddStayMapScreen(),
+    5 => const TripOverviewScreen(),
+    6 => const FlexibleDayPlanScreen(),
+    7 => const PlaceExplorerScreen(),
+    8 => const AttractionDetailScreen(),
+    9 => const TouristTransitGuideScreen(),
+    10 => const RouteComparisonScreen(),
+    11 => const UberHandoffPreview(),
+    12 => const DriverCardPreview(),
+    13 => const DepartureAlertScreen(),
+    14 => const ProfileSettingsScreen(),
+    15 => const NextMoveHome(),
+    16 => const TimelineHome(),
     _ => const MapFirstHome(),
   };
 
@@ -6313,6 +6319,1651 @@ class _EstimateValue extends StatelessWidget {
   }
 }
 
+enum _DepartureChoice { undecided, now, tenMinutes, delayed, skipped }
+
+class DepartureAlertScreen extends StatefulWidget {
+  const DepartureAlertScreen({super.key});
+
+  @override
+  State<DepartureAlertScreen> createState() => _DepartureAlertScreenState();
+}
+
+class _DepartureAlertScreenState extends State<DepartureAlertScreen> {
+  _DepartureChoice choice = _DepartureChoice.undecided;
+
+  Future<void> _skipNextPlace() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Skip MMCA Seoul?'),
+        content: const Text(
+          'MMCA Seoul will stay in your saved places. Cheonggyecheon Stream becomes your next stop.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep this stop'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Skip next place'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      setState(() => choice = _DepartureChoice.skipped);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final skipped = choice == _DepartureChoice.skipped;
+    final (eyebrow, title, detail, statusColor) = switch (choice) {
+      _DepartureChoice.now => (
+        'LEAVING NOW',
+        'Ready to head out',
+        'Arrive at MMCA around 1:52 PM',
+        const Color(0xFF69C99C),
+      ),
+      _DepartureChoice.tenMinutes => (
+        'REMINDER SET',
+        'Leave in 10 minutes',
+        'We will remind you again at 1:42 PM',
+        AppColors.yellow,
+      ),
+      _DepartureChoice.delayed => (
+        'RUNNING LATE',
+        'About 25 minutes delayed',
+        'Estimated arrival · 2:17 PM',
+        const Color(0xFFF2A08C),
+      ),
+      _DepartureChoice.skipped => (
+        'STOP SKIPPED',
+        'Cheonggyecheon is next',
+        '18 min by public transit',
+        const Color(0xFF8CBDEA),
+      ),
+      _ => (
+        'ON TIME',
+        'Leave in 24 minutes',
+        'Arrive at MMCA around 1:52 PM',
+        const Color(0xFF69C99C),
+      ),
+    };
+
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _AppHeader(
+            title: 'Departure status',
+            subtitle: 'Seoul · Day 2 · Updated now',
+          ),
+          const SizedBox(height: 17),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.deepGreen,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Text(
+                              eyebrow,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const Spacer(),
+                            const Text(
+                              '1:08 PM',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 23,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          detail,
+                          style: const TextStyle(
+                            color: Color(0xFFC7D8D0),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _DepartureDestination(
+                          icon: skipped
+                              ? Icons.water_rounded
+                              : Icons.museum_outlined,
+                          title: skipped
+                              ? 'Cheonggyecheon Stream'
+                              : 'MMCA Seoul',
+                          local: skipped ? '청계천' : '국립현대미술관 서울',
+                          time: skipped ? 'Next' : '2:00 PM',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 19),
+                  const Text('Update your departure', style: _sectionTitle),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Choose once. You can change it again at any time.',
+                    style: TextStyle(fontSize: 10, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 11),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DepartureActionCard(
+                          selected: choice == _DepartureChoice.now,
+                          icon: Icons.directions_run_rounded,
+                          title: 'Leave now',
+                          detail: 'Start directions',
+                          color: AppColors.green,
+                          onTap: () =>
+                              setState(() => choice = _DepartureChoice.now),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: _DepartureActionCard(
+                          selected: choice == _DepartureChoice.tenMinutes,
+                          icon: Icons.snooze_rounded,
+                          title: 'Leave in 10 min',
+                          detail: 'Remind me again',
+                          color: const Color(0xFFB18316),
+                          onTap: () => setState(
+                            () => choice = _DepartureChoice.tenMinutes,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DepartureActionCard(
+                          selected: choice == _DepartureChoice.delayed,
+                          icon: Icons.schedule_rounded,
+                          title: 'I am delayed',
+                          detail: 'Recheck the day',
+                          color: const Color(0xFFC45C4D),
+                          onTap: () =>
+                              setState(() => choice = _DepartureChoice.delayed),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: _DepartureActionCard(
+                          selected: choice == _DepartureChoice.skipped,
+                          icon: Icons.skip_next_rounded,
+                          title: 'Skip next place',
+                          detail: 'Keep it saved',
+                          color: const Color(0xFF536A8A),
+                          onTap: _skipNextPlace,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _DepartureImpact(choice: choice),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+          _PrimaryAction(
+            label: switch (choice) {
+              _DepartureChoice.now => 'Start route',
+              _DepartureChoice.tenMinutes => 'Keep 10-minute reminder',
+              _DepartureChoice.delayed => 'Review adjusted itinerary',
+              _DepartureChoice.skipped => 'Plan route to Cheonggyecheon',
+              _ => 'Keep current departure',
+            },
+            icon: choice == _DepartureChoice.tenMinutes
+                ? Icons.notifications_active_outlined
+                : Icons.arrow_forward_rounded,
+            background: AppColors.green,
+            foreground: Colors.white,
+            onTap: () =>
+                _showPrototypeMessage(context, message: '출발 상태가 일정에 반영되었습니다.'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DepartureDestination extends StatelessWidget {
+  const _DepartureDestination({
+    required this.icon,
+    required this.title,
+    required this.local,
+    required this.time,
+  });
+
+  final IconData icon;
+  final String title;
+  final String local;
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.yellow, size: 20),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  local,
+                  style: const TextStyle(color: Colors.white60, fontSize: 9),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DepartureActionCard extends StatelessWidget {
+  const _DepartureActionCard({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.color,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String detail;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected ? color.withValues(alpha: .1) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? color : AppColors.line,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      detail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 8.5,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                Icon(Icons.check_circle_rounded, color: color, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DepartureImpact extends StatelessWidget {
+  const _DepartureImpact({required this.choice});
+
+  final _DepartureChoice choice;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, title, detail, warning) = switch (choice) {
+      _DepartureChoice.now => (
+        Icons.check_circle_outline_rounded,
+        'You will arrive about 8 minutes early',
+        'The rest of today stays unchanged.',
+        false,
+      ),
+      _DepartureChoice.tenMinutes => (
+        Icons.notifications_active_outlined,
+        'Reminder scheduled for 1:42 PM',
+        'You should still arrive before your reservation.',
+        false,
+      ),
+      _DepartureChoice.delayed => (
+        Icons.warning_amber_rounded,
+        'Your 2:00 PM reservation may be affected',
+        'Cheonggyecheon moves about 25 minutes later.',
+        true,
+      ),
+      _DepartureChoice.skipped => (
+        Icons.skip_next_rounded,
+        'MMCA Seoul remains in saved places',
+        'Cheonggyecheon is now your next destination.',
+        false,
+      ),
+      _ => (
+        Icons.event_available_outlined,
+        'Your schedule is currently on time',
+        'Leave by 1:32 PM to arrive around 1:52 PM.',
+        false,
+      ),
+    };
+    final color = warning ? const Color(0xFFB64B43) : AppColors.green;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: warning ? const Color(0xFFFFEFEC) : AppColors.paleGreen,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _DefaultTravelMode { uber, transit, walk }
+
+class ProfileSettingsScreen extends StatefulWidget {
+  const ProfileSettingsScreen({super.key});
+
+  @override
+  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+}
+
+class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  String userLanguage = 'English';
+  String destinationLanguage = '한국어 · Korean';
+  bool locationAllowed = true;
+  bool uberInstalled = true;
+  bool uberChecked = false;
+  _DefaultTravelMode defaultMode = _DefaultTravelMode.transit;
+
+  Future<void> _pickUserLanguage() async {
+    final value = await _showSettingPicker(
+      context,
+      title: 'App language',
+      current: userLanguage,
+      options: const ['English', '한국어 · Korean', '日本語 · Japanese'],
+    );
+    if (value != null && mounted) setState(() => userLanguage = value);
+  }
+
+  Future<void> _pickDestinationLanguage() async {
+    final value = await _showSettingPicker(
+      context,
+      title: 'Destination language',
+      current: destinationLanguage,
+      options: const ['한국어 · Korean', '日本語 · Japanese', '中文 · Chinese'],
+    );
+    if (value != null && mounted) {
+      setState(() => destinationLanguage = value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _AppHeader(
+            title: 'Profile & settings',
+            subtitle: 'Language, permissions and travel defaults',
+            showProfile: false,
+          ),
+          const SizedBox(height: 17),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.deepGreen,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 23,
+                          backgroundColor: Color(0xFFF5D67B),
+                          child: Text(
+                            'MK',
+                            style: TextStyle(
+                              color: AppColors.deepGreen,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Min Kim',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Seoul trip · Sep 14–18',
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.edit_outlined,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text('Languages', style: _sectionTitle),
+                  const SizedBox(height: 8),
+                  _SettingsGroup(
+                    children: [
+                      _SettingsTile(
+                        icon: Icons.translate_rounded,
+                        title: 'App language',
+                        detail: 'Menus and travel guidance',
+                        value: userLanguage,
+                        onTap: _pickUserLanguage,
+                      ),
+                      const Divider(height: 1, color: AppColors.line),
+                      _SettingsTile(
+                        icon: Icons.record_voice_over_rounded,
+                        title: 'Destination language',
+                        detail: 'Local names and driver card',
+                        value: destinationLanguage,
+                        onTap: _pickDestinationLanguage,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 17),
+                  const Text('Travel readiness', style: _sectionTitle),
+                  const SizedBox(height: 8),
+                  _SettingsGroup(
+                    children: [
+                      _PermissionTile(
+                        allowed: locationAllowed,
+                        onChanged: (value) =>
+                            setState(() => locationAllowed = value),
+                      ),
+                      const Divider(height: 1, color: AppColors.line),
+                      _UberInstallTile(
+                        installed: uberInstalled,
+                        checked: uberChecked,
+                        onCheck: () => setState(() => uberChecked = true),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 17),
+                  const Text('Default travel mode', style: _sectionTitle),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Used first when NextMate recommends your next move.',
+                    style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 9),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DefaultModeOption(
+                          selected: defaultMode == _DefaultTravelMode.uber,
+                          icon: Icons.local_taxi_rounded,
+                          label: 'Uber',
+                          onTap: () => setState(
+                            () => defaultMode = _DefaultTravelMode.uber,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: _DefaultModeOption(
+                          selected: defaultMode == _DefaultTravelMode.transit,
+                          icon: Icons.directions_subway_rounded,
+                          label: 'Transit',
+                          onTap: () => setState(
+                            () => defaultMode = _DefaultTravelMode.transit,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: _DefaultModeOption(
+                          selected: defaultMode == _DefaultTravelMode.walk,
+                          icon: Icons.directions_walk_rounded,
+                          label: 'Walk',
+                          onTap: () => setState(
+                            () => defaultMode = _DefaultTravelMode.walk,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 13),
+                  Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: AppColors.paleGreen,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 16,
+                          color: AppColors.green,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Location is used only for routes and nearby guidance while you use the app.',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+          _PrimaryAction(
+            label: 'Save settings',
+            icon: Icons.check_rounded,
+            background: AppColors.green,
+            foreground: Colors.white,
+            onTap: () =>
+                _showPrototypeMessage(context, message: '사용자 설정이 저장되었습니다.'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(17),
+      border: Border.all(color: AppColors.line),
+    ),
+    child: Column(children: children),
+  );
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.value,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(17),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            _SettingIcon(icon: icon),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    detail,
+                    style: const TextStyle(
+                      fontSize: 8.5,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  color: AppColors.green,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 3),
+            const Icon(Icons.chevron_right_rounded, size: 17),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PermissionTile extends StatelessWidget {
+  const _PermissionTile({required this.allowed, required this.onChanged});
+
+  final bool allowed;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          const _SettingIcon(icon: Icons.location_on_outlined),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Location permission',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  allowed ? 'While using the app' : 'Location guidance is off',
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    color: allowed ? AppColors.green : const Color(0xFFB64B43),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(value: allowed, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
+class _UberInstallTile extends StatelessWidget {
+  const _UberInstallTile({
+    required this.installed,
+    required this.checked,
+    required this.onCheck,
+  });
+
+  final bool installed;
+  final bool checked;
+  final VoidCallback onCheck;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          const _SettingIcon(icon: Icons.local_taxi_outlined),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Uber app',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  installed ? 'Installed · Ready to open' : 'Not installed',
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    color: installed
+                        ? AppColors.green
+                        : const Color(0xFFB64B43),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onCheck,
+            child: Text(checked ? 'Checked' : 'Check again'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingIcon extends StatelessWidget {
+  const _SettingIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 34,
+    height: 34,
+    decoration: BoxDecoration(
+      color: AppColors.paleGreen,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Icon(icon, size: 17, color: AppColors.green),
+  );
+}
+
+class _DefaultModeOption extends StatelessWidget {
+  const _DefaultModeOption({
+    required this.selected,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.paleGreen : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.green : AppColors.line,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: AppColors.green),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              size: 15,
+              color: selected ? AppColors.green : AppColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<String?> _showSettingPicker(
+  BuildContext context, {
+  required String title,
+  required String current,
+  required List<String> options,
+}) {
+  return showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) => Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 11, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 9),
+              ...options.map(
+                (option) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    option,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  trailing: option == current
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.green,
+                        )
+                      : const Icon(
+                          Icons.radio_button_off_rounded,
+                          color: AppColors.muted,
+                        ),
+                  onTap: () => Navigator.pop(context, option),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  int step = 0;
+  String language = 'English';
+  bool locationAllowed = false;
+  bool uberInstalled = false;
+
+  void _continue() {
+    if (step < 3) {
+      setState(() {
+        if (step == 2) locationAllowed = true;
+        step += 1;
+      });
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: TripSetupScreen()),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.green,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.route_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'NextMate',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                ),
+              ),
+              if (step < 3)
+                TextButton(
+                  onPressed: () => setState(() => step = 3),
+                  child: const Text('Skip setup'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 17),
+          Row(
+            children: List.generate(4, (index) {
+              final active = index <= step;
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: index == 3 ? 0 : 5),
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.green : AppColors.line,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'STEP ${step + 1} OF 4',
+            style: const TextStyle(
+              color: AppColors.green,
+              fontSize: 8.5,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 15),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: SingleChildScrollView(
+                key: ValueKey(step),
+                child: switch (step) {
+                  0 => const _OnboardingIntro(),
+                  1 => _OnboardingLanguage(
+                    selected: language,
+                    onChanged: (value) => setState(() => language = value),
+                  ),
+                  2 => _OnboardingLocation(allowed: locationAllowed),
+                  _ => _OnboardingUber(
+                    installed: uberInstalled,
+                    onChanged: (value) => setState(() => uberInstalled = value),
+                  ),
+                },
+              ),
+            ),
+          ),
+          if (step > 0) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: () => setState(() => step -= 1),
+                icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                label: const Text('Back'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 5),
+          _PrimaryAction(
+            label: switch (step) {
+              0 => 'See how it works',
+              1 => 'Continue in $language',
+              2 => locationAllowed ? 'Continue' : 'Allow location & continue',
+              _ => 'Start planning my trip',
+            },
+            icon: step == 3 ? Icons.check_rounded : Icons.arrow_forward_rounded,
+            background: AppColors.green,
+            foreground: Colors.white,
+            onTap: _continue,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingIntro extends StatelessWidget {
+  const _OnboardingIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _OnboardingHero(
+          icon: Icons.travel_explore_rounded,
+          title: 'Travel with confidence',
+          detail:
+              'NextMate keeps your stays, daily plans and next move together.',
+        ),
+        const SizedBox(height: 18),
+        const Text('What NextMate helps with', style: _sectionTitle),
+        const SizedBox(height: 9),
+        const _OnboardingFeature(
+          icon: Icons.calendar_month_rounded,
+          title: 'Build days around your stays',
+          detail: 'Keep every date, hotel and open time easy to understand.',
+        ),
+        const SizedBox(height: 8),
+        const _OnboardingFeature(
+          icon: Icons.compare_arrows_rounded,
+          title: 'Compare every way to go',
+          detail: 'See Uber, transit and walking time and cost together.',
+        ),
+        const SizedBox(height: 8),
+        const _OnboardingFeature(
+          icon: Icons.assistant_direction_rounded,
+          title: 'Get tourist-friendly guidance',
+          detail: 'Follow stations, transfers, exits and local-language help.',
+        ),
+      ],
+    );
+  }
+}
+
+class _OnboardingLanguage extends StatelessWidget {
+  const _OnboardingLanguage({required this.selected, required this.onChanged});
+
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const languages = [
+      ('English', 'English'),
+      ('한국어', 'Korean'),
+      ('日本語', 'Japanese'),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _OnboardingHero(
+          icon: Icons.translate_rounded,
+          title: 'Choose your language',
+          detail: 'You can change this later in Profile & settings.',
+        ),
+        const SizedBox(height: 18),
+        ...languages.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _OnboardingChoice(
+              selected: selected == item.$1,
+              title: item.$1,
+              detail: item.$2,
+              onTap: () => onChanged(item.$1),
+            ),
+          ),
+        ),
+        const SizedBox(height: 5),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.paleGreen,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.language_rounded, size: 18, color: AppColors.green),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'For this Seoul trip, Korean names and addresses will also be shown.',
+                  style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OnboardingLocation extends StatelessWidget {
+  const _OnboardingLocation({required this.allowed});
+
+  final bool allowed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _OnboardingHero(
+          icon: Icons.my_location_rounded,
+          title: 'Know what is nearby',
+          detail:
+              'Allow location while using the app for routes and departure reminders.',
+        ),
+        const SizedBox(height: 18),
+        Container(
+          height: 175,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8EFEA),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _MapCanvas()),
+              Center(
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.green, width: 4),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x22000000), blurRadius: 12),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.person_pin_circle_rounded,
+                    color: AppColors.green,
+                    size: 31,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _PermissionReason(
+          icon: Icons.route_rounded,
+          title: 'Routes from where you are',
+        ),
+        const SizedBox(height: 7),
+        const _PermissionReason(
+          icon: Icons.notifications_active_outlined,
+          title: 'Useful departure reminders',
+        ),
+        const SizedBox(height: 7),
+        const _PermissionReason(
+          icon: Icons.lock_outline_rounded,
+          title: 'Only while you use NextMate',
+        ),
+        if (allowed) ...[
+          const SizedBox(height: 9),
+          const Text(
+            'Location permission is ready.',
+            style: TextStyle(
+              color: AppColors.green,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _OnboardingUber extends StatelessWidget {
+  const _OnboardingUber({required this.installed, required this.onChanged});
+
+  final bool installed;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _OnboardingHero(
+          icon: Icons.local_taxi_rounded,
+          title: 'Get Uber ready',
+          detail:
+              'NextMate prepares pickup and destination, then hands off to Uber.',
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: installed ? AppColors.green : AppColors.line,
+              width: installed ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.ink,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Text(
+                  'UBER',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Uber app status',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      installed ? 'Installed · Ready' : 'Not confirmed yet',
+                      style: TextStyle(
+                        color: installed ? AppColors.green : AppColors.muted,
+                        fontSize: 9.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                installed
+                    ? Icons.check_circle_rounded
+                    : Icons.help_outline_rounded,
+                color: installed ? AppColors.green : AppColors.muted,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => onChanged(!installed),
+            icon: Icon(
+              installed
+                  ? Icons.remove_circle_outline_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 17,
+            ),
+            label: Text(
+              installed ? 'Uber is not installed' : 'Uber is installed',
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _OnboardingFeature(
+          icon: Icons.pin_drop_outlined,
+          title: 'Pickup point checked first',
+          detail: 'Confirm the exact entrance before opening Uber.',
+        ),
+        const SizedBox(height: 8),
+        const _OnboardingFeature(
+          icon: Icons.translate_rounded,
+          title: 'Driver card is always available',
+          detail: 'Show the destination and entrance in the local language.',
+        ),
+        const SizedBox(height: 10),
+        const Center(
+          child: Text(
+            'You can finish setup even without Uber.',
+            style: TextStyle(fontSize: 9, color: AppColors.muted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OnboardingHero extends StatelessWidget {
+  const _OnboardingHero({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(19),
+      decoration: BoxDecoration(
+        color: AppColors.deepGreen,
+        borderRadius: BorderRadius.circular(23),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 43,
+            height: 43,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: AppColors.yellow, size: 23),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 23,
+              height: 1.12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            detail,
+            style: const TextStyle(
+              color: Color(0xFFC7D8D0),
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingFeature extends StatelessWidget {
+  const _OnboardingFeature({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SettingIcon(icon: icon),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingChoice extends StatelessWidget {
+  const _OnboardingChoice({
+    required this.selected,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.paleGreen : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? AppColors.green : AppColors.line,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    detail,
+                    style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              color: selected ? AppColors.green : AppColors.muted,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PermissionReason extends StatelessWidget {
+  const _PermissionReason({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, color: AppColors.green, size: 17),
+      const SizedBox(width: 8),
+      Text(
+        title,
+        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+      ),
+    ],
+  );
+}
+
 class NextMoveHome extends StatelessWidget {
   const NextMoveHome({super.key});
 
@@ -6323,9 +7974,10 @@ class NextMoveHome extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _AppHeader(
+            _AppHeader(
               title: 'Seoul · Day 2',
               subtitle: 'Tuesday, September 15',
+              onProfileTap: () => _openProfileSettings(context),
             ),
             const SizedBox(height: 22),
             const _LocationLine(label: 'Bukchon Hanok Village'),
@@ -6369,45 +8021,64 @@ class NextMoveHome extends StatelessWidget {
                     style: TextStyle(color: Color(0xFFC7D8D0), fontSize: 13),
                   ),
                   const SizedBox(height: 22),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .11),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          color: AppColors.yellow,
-                          size: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Leave in 24 minutes',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                'Arrive around 1:52 PM',
-                                style: TextStyle(
-                                  color: Color(0xFFC7D8D0),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                  InkWell(
+                    onTap: () => _openDepartureAlert(context),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .11),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            color: AppColors.yellow,
+                            size: 20,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Leave in 24 minutes',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Text(
+                                  'Arrive around 1:52 PM',
+                                  style: TextStyle(
+                                    color: Color(0xFFC7D8D0),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'MANAGE',
+                            style: TextStyle(
+                              color: AppColors.yellow,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: .6,
+                            ),
+                          ),
+                          SizedBox(width: 3),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -6495,9 +8166,10 @@ class TimelineHome extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _AppHeader(
+          _AppHeader(
             title: 'Today in Seoul',
             subtitle: '3 of 5 places remaining',
+            onProfileTap: () => _openProfileSettings(context),
           ),
           const SizedBox(height: 20),
           Container(
@@ -6829,9 +8501,16 @@ class _PhonePage extends StatelessWidget {
 }
 
 class _AppHeader extends StatelessWidget {
-  const _AppHeader({required this.title, required this.subtitle});
+  const _AppHeader({
+    required this.title,
+    required this.subtitle,
+    this.onProfileTap,
+    this.showProfile = true,
+  });
   final String title;
   final String subtitle;
+  final VoidCallback? onProfileTap;
+  final bool showProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -6856,16 +8535,21 @@ class _AppHeader extends StatelessWidget {
             ],
           ),
         ),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Colors.white,
+        if (showProfile)
+          InkWell(
+            onTap: onProfileTap,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.line),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: const Icon(Icons.person_outline_rounded, size: 21),
+            ),
           ),
-          child: const Icon(Icons.person_outline_rounded, size: 21),
-        ),
       ],
     );
   }
@@ -7440,6 +9124,22 @@ void _openRouteComparison(BuildContext context) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => const Scaffold(body: RouteComparisonScreen()),
+    ),
+  );
+}
+
+void _openDepartureAlert(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: DepartureAlertScreen()),
+    ),
+  );
+}
+
+void _openProfileSettings(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: ProfileSettingsScreen()),
     ),
   );
 }

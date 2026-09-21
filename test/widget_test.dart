@@ -34,6 +34,12 @@ void main() {
     expect(find.text('Ready to open Uber?'), findsOneWidget);
     expect(find.text('Driver card'), findsWidgets);
     expect(find.text('국립현대미술관\n서울관 정문으로\n가 주세요.'), findsOneWidget);
+    expect(find.text('Departure alert'), findsOneWidget);
+    expect(find.text('Update your departure'), findsOneWidget);
+    expect(find.text('Profile & settings'), findsWidgets);
+    expect(find.text('App language'), findsOneWidget);
+    expect(find.text('First-run onboarding'), findsOneWidget);
+    expect(find.text('Travel with confidence'), findsOneWidget);
     expect(find.text('When will you be\nin Seoul?'), findsOneWidget);
     expect(find.text('L7 Myeongdong'), findsWidgets);
     expect(find.text('Next move'), findsOneWidget);
@@ -341,6 +347,168 @@ void main() {
 
     expect(find.text('Choose how to go'), findsOneWidget);
     expect(find.text('BEST VALUE'), findsOneWidget);
+  });
+
+  testWidgets('departure status handles now reminder delay and skip', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: DepartureAlertScreen())),
+    );
+
+    expect(find.text('Departure status'), findsOneWidget);
+    expect(find.text('Leave now'), findsOneWidget);
+    expect(find.text('Leave in 10 min'), findsOneWidget);
+    expect(find.text('I am delayed'), findsOneWidget);
+    expect(find.text('Skip next place'), findsOneWidget);
+
+    await tester.tap(find.text('Leave now'));
+    await tester.pump();
+    expect(find.text('Ready to head out'), findsOneWidget);
+    expect(find.text('Start route'), findsOneWidget);
+
+    await tester.tap(find.text('Leave in 10 min'));
+    await tester.pump();
+    expect(find.text('Leave in 10 minutes'), findsOneWidget);
+    expect(find.text('Reminder scheduled for 1:42 PM'), findsOneWidget);
+
+    await tester.tap(find.text('I am delayed'));
+    await tester.pump();
+    expect(find.text('About 25 minutes delayed'), findsOneWidget);
+    expect(
+      find.text('Your 2:00 PM reservation may be affected'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Skip next place'));
+    await tester.pumpAndSettle();
+    expect(find.text('Skip MMCA Seoul?'), findsOneWidget);
+    await tester.tap(find.text('Skip next place').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Cheonggyecheon is next'), findsOneWidget);
+    expect(find.text('Plan route to Cheonggyecheon'), findsOneWidget);
+  });
+
+  testWidgets('home departure card opens departure status', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: NextMoveHome())),
+    );
+    await tester.tap(find.text('MANAGE'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Departure status'), findsOneWidget);
+    expect(find.text('Your schedule is currently on time'), findsOneWidget);
+  });
+
+  testWidgets('profile settings updates language permission and Uber status', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: ProfileSettingsScreen())),
+    );
+
+    expect(find.text('Profile & settings'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('한국어 · Korean'), findsOneWidget);
+    expect(find.text('While using the app'), findsOneWidget);
+    expect(find.text('Installed · Ready to open'), findsOneWidget);
+    expect(find.text('Transit'), findsOneWidget);
+
+    await tester.tap(find.text('App language'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('日本語 · Japanese'));
+    await tester.pumpAndSettle();
+    expect(find.text('日本語 · Japanese'), findsOneWidget);
+
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    expect(find.text('Location guidance is off'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Check again'));
+    await tester.tap(find.text('Check again'));
+    await tester.pump();
+    expect(find.text('Checked'), findsOneWidget);
+
+    await tester.tap(find.text('Walk'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Save settings'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pump();
+    expect(find.text('사용자 설정이 저장되었습니다.'), findsOneWidget);
+  });
+
+  testWidgets('home profile button opens profile settings', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: NextMoveHome())),
+    );
+    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile & settings'), findsOneWidget);
+    expect(find.text('Default travel mode'), findsOneWidget);
+  });
+
+  testWidgets('first-run onboarding completes feature and setup steps', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: OnboardingScreen())),
+    );
+
+    expect(find.text('STEP 1 OF 4'), findsOneWidget);
+    expect(find.text('Travel with confidence'), findsOneWidget);
+    expect(find.text('Compare every way to go'), findsOneWidget);
+
+    await tester.tap(find.text('See how it works'));
+    await tester.pumpAndSettle();
+    expect(find.text('STEP 2 OF 4'), findsOneWidget);
+    expect(find.text('Choose your language'), findsOneWidget);
+
+    await tester.tap(find.text('한국어'));
+    await tester.pump();
+    expect(find.text('Continue in 한국어'), findsOneWidget);
+    await tester.tap(find.text('Continue in 한국어'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('STEP 3 OF 4'), findsOneWidget);
+    expect(find.text('Know what is nearby'), findsOneWidget);
+    await tester.tap(find.text('Allow location & continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('STEP 4 OF 4'), findsOneWidget);
+    expect(find.text('Get Uber ready'), findsOneWidget);
+    await tester.tap(find.text('Uber is installed'));
+    await tester.pump();
+    expect(find.text('Installed · Ready'), findsOneWidget);
+
+    await tester.tap(find.text('Start planning my trip'));
+    await tester.pumpAndSettle();
+    expect(find.text('When will you be\nin Seoul?'), findsOneWidget);
   });
 
   testWidgets('place explorer adds open places and reschedules closed places', (

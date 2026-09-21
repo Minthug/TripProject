@@ -6,6 +6,7 @@ transition.
 ```mermaid
 flowchart LR
     Splash[00 NextMate Splash]
+    Onboarding[00A First-run Onboarding]
     Setup[01–02 Stay-based Planner]
     AddStay[03 Add Stay Map]
     Home[01 Travel Home]
@@ -22,6 +23,8 @@ flowchart LR
     Profile[09 Profile & Setup]
 
     Splash -->|Active trip| Home
+    Splash -->|First launch| Onboarding
+    Onboarding -->|Start planning| Setup
     Splash -->|New trip| Setup
     Setup -->|Build itinerary| Itinerary
     Setup -->|+ Stay| AddStay
@@ -46,6 +49,8 @@ flowchart LR
 | Source | Button | Destination | Type |
 |---|---|---|---|
 | NextMate Splash | Active trip detected | Travel Home | Automatic |
+| NextMate Splash | First launch | First-run Onboarding | Automatic |
+| First-run Onboarding | Start planning | Stay-based Planner | Internal |
 | NextMate Splash | New trip | Stay-based Planner | Internal |
 | Stay-based Planner | Build itinerary | Trip Overview | Internal |
 | Stay-based Planner | + Stay | Add Stay Map | Internal |
