@@ -1,5 +1,7 @@
 # NextMate
 
+**Live UI gallery:** https://minthug.github.io/TripProject/
+
 NextMate is a Flutter prototype for an itinerary-aware travel companion. The
 current build is a design gallery with a launch screen, trip setup, and three alternatives
 for the in-trip home screen:
