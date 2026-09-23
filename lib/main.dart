@@ -86,7 +86,10 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     _VariantInfo('A', 'Next move', '출발 시각과 다음 행동 중심'),
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
+    _VariantInfo('ST', 'Recovery states', '오류를 설명하고 다음 행동 안내'),
   ];
+
+  bool get uberInstalled => Uri.base.queryParameters['uber'] != 'missing';
 
   Widget _screen(int index) => switch (index) {
     0 => const OnboardingScreen(),
@@ -99,14 +102,15 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     7 => const PlaceExplorerScreen(),
     8 => const AttractionDetailScreen(),
     9 => const TouristTransitGuideScreen(),
-    10 => const RouteComparisonScreen(),
-    11 => const UberHandoffPreview(),
+    10 => RouteComparisonScreen(uberInstalled: uberInstalled),
+    11 => UberHandoffPreview(uberInstalled: uberInstalled),
     12 => const DriverCardPreview(),
     13 => const DepartureAlertScreen(),
     14 => const ProfileSettingsScreen(),
     15 => const TravelAppShell(),
     16 => const TimelineHome(),
-    _ => const MapFirstHome(),
+    17 => const MapFirstHome(),
+    _ => const RecoveryStatesScreen(),
   };
 
   @override
@@ -274,22 +278,15 @@ class _GalleryHeader extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     child: SegmentedButton<int>(
                       showSelectedIcon: false,
-                      segments: const [
-                        ButtonSegment(value: 0, label: Text('00')),
-                        ButtonSegment(value: 1, label: Text('01')),
-                        ButtonSegment(value: 2, label: Text('02')),
-                        ButtonSegment(value: 3, label: Text('03')),
-                        ButtonSegment(value: 4, label: Text('04')),
-                        ButtonSegment(value: 5, label: Text('05')),
-                        ButtonSegment(value: 6, label: Text('06')),
-                        ButtonSegment(value: 7, label: Text('07')),
-                        ButtonSegment(value: 8, label: Text('08')),
-                        ButtonSegment(value: 9, label: Text('09')),
-                        ButtonSegment(value: 10, label: Text('10')),
-                        ButtonSegment(value: 11, label: Text('A')),
-                        ButtonSegment(value: 12, label: Text('B')),
-                        ButtonSegment(value: 13, label: Text('C')),
-                      ],
+                      segments: List.generate(
+                        _DesignGalleryPageState.variants.length,
+                        (index) => ButtonSegment(
+                          value: index,
+                          label: Text(
+                            _DesignGalleryPageState.variants[index].key,
+                          ),
+                        ),
+                      ),
                       selected: {selected},
                       onSelectionChanged: (value) => onSelected(value.first),
                     ),
@@ -297,7 +294,9 @@ class _GalleryHeader extends StatelessWidget {
                 )
               else
                 Text(
-                  flowMode ? '버튼 → 화면 연결도' : '14 screens',
+                  flowMode
+                      ? '버튼 → 화면 연결도'
+                      : '${_DesignGalleryPageState.variants.length} screens',
                   style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
             ],
@@ -5372,7 +5371,9 @@ void _showDriverCard(BuildContext context) {
 }
 
 class UberHandoffPreview extends StatelessWidget {
-  const UberHandoffPreview({super.key});
+  const UberHandoffPreview({super.key, this.uberInstalled = true});
+
+  final bool uberInstalled;
 
   @override
   Widget build(BuildContext context) {
@@ -5382,9 +5383,12 @@ class UberHandoffPreview extends StatelessWidget {
         Positioned.fill(
           child: ColoredBox(color: Colors.black.withValues(alpha: .38)),
         ),
-        const Align(
+        Align(
           alignment: Alignment.bottomCenter,
-          child: _UberHandoffSheetContent(preview: true),
+          child: _UberHandoffSheetContent(
+            preview: true,
+            uberInstalled: uberInstalled,
+          ),
         ),
       ],
     );
@@ -5392,9 +5396,13 @@ class UberHandoffPreview extends StatelessWidget {
 }
 
 class _UberHandoffSheetContent extends StatelessWidget {
-  const _UberHandoffSheetContent({this.preview = false});
+  const _UberHandoffSheetContent({
+    this.preview = false,
+    this.uberInstalled = true,
+  });
 
   final bool preview;
+  final bool uberInstalled;
 
   @override
   Widget build(BuildContext context) {
@@ -5402,122 +5410,168 @@ class _UberHandoffSheetContent extends StatelessWidget {
       color: Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD7DBD8),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 17),
-            const Row(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ready to open Uber?',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w800,
-                        ),
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7DBD8),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 17),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            uberInstalled
+                                ? 'Ready to open Uber?'
+                                : 'Uber is not installed',
+                            style: const TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            uberInstalled
+                                ? 'Check your pickup and destination first.'
+                                : 'Install Uber before requesting this ride.',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Check your pickup and destination first.',
-                        style: TextStyle(fontSize: 11, color: AppColors.muted),
+                    ),
+                    _UberBadge(available: uberInstalled),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                const _HandoffRoute(),
+                const SizedBox(height: 13),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: uberInstalled
+                        ? AppColors.paleGreen
+                        : const Color(0xFFFFEFEC),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        uberInstalled
+                            ? Icons.check_circle_rounded
+                            : Icons.mobile_off_rounded,
+                        size: 17,
+                        color: uberInstalled
+                            ? AppColors.green
+                            : const Color(0xFFB64B43),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          uberInstalled
+                              ? 'Destination coordinates and Korean address are ready.'
+                              : 'Ride requests are unavailable. Your route details are saved.',
+                          style: const TextStyle(fontSize: 11),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                _UberBadge(),
-              ],
-            ),
-            const SizedBox(height: 18),
-            const _HandoffRoute(),
-            const SizedBox(height: 13),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.paleGreen,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    size: 17,
-                    color: AppColors.green,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Destination coordinates and Korean address are ready.',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 13),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: preview ? null : () => _showDriverCard(context),
-                    icon: const Icon(Icons.translate_rounded, size: 17),
-                    label: const Text('Driver card'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.ink,
-                      disabledForegroundColor: AppColors.ink,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      side: const BorderSide(color: AppColors.line),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                const SizedBox(height: 13),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: preview
+                            ? null
+                            : () => _showDriverCard(context),
+                        icon: const Icon(Icons.translate_rounded, size: 17),
+                        label: const Text('Driver card'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.ink,
+                          disabledForegroundColor: AppColors.ink,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          side: const BorderSide(color: AppColors.line),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
                       ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed: uberInstalled && preview
+                            ? null
+                            : () => _showPrototypeMessage(
+                                context,
+                                message: uberInstalled
+                                    ? 'Uber 앱으로 이동할 준비가 되었습니다.'
+                                    : 'Uber 앱스토어 페이지를 열 준비가 되었습니다.',
+                              ),
+                        icon: Icon(
+                          uberInstalled
+                              ? Icons.open_in_new_rounded
+                              : Icons.download_rounded,
+                          size: 17,
+                        ),
+                        label: Text(
+                          uberInstalled ? 'Continue in Uber' : 'Install Uber',
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: uberInstalled
+                              ? AppColors.ink
+                              : AppColors.green,
+                          disabledBackgroundColor: AppColors.ink,
+                          disabledForegroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Center(
+                  child: Text(
+                    uberInstalled
+                        ? 'Fare, vehicle selection and payment continue in Uber.'
+                        : 'Or return to route comparison and choose public transit.',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
                     ),
                   ),
                 ),
-                const SizedBox(width: 9),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton.icon(
-                    onPressed: preview
-                        ? null
-                        : () => _showPrototypeMessage(context),
-                    icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                    label: const Text('Continue in Uber'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.ink,
-                      disabledBackgroundColor: AppColors.ink,
-                      disabledForegroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 9),
-            const Center(
-              child: Text(
-                'Fare, vehicle selection and payment continue in Uber.',
-                style: TextStyle(fontSize: 11, color: AppColors.muted),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -5525,21 +5579,23 @@ class _UberHandoffSheetContent extends StatelessWidget {
 }
 
 class _UberBadge extends StatelessWidget {
-  const _UberBadge();
+  const _UberBadge({this.available = true});
+
+  final bool available;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: available ? AppColors.ink : const Color(0xFFFFE4DE),
         borderRadius: BorderRadius.circular(11),
       ),
-      child: const Text(
-        'UBER',
+      child: Text(
+        available ? 'UBER' : 'NOT INSTALLED',
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
+          color: available ? Colors.white : const Color(0xFFB64B43),
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: .8,
         ),
@@ -5682,7 +5738,9 @@ enum _TravelMode { uber, transit, walk }
 enum _TransitRouteKind { subway, bus }
 
 class RouteComparisonScreen extends StatefulWidget {
-  const RouteComparisonScreen({super.key});
+  const RouteComparisonScreen({super.key, this.uberInstalled = true});
+
+  final bool uberInstalled;
 
   @override
   State<RouteComparisonScreen> createState() => _RouteComparisonScreenState();
@@ -5695,7 +5753,14 @@ class _RouteComparisonScreenState extends State<RouteComparisonScreen> {
   void _continue() {
     switch (selected) {
       case _TravelMode.uber:
-        _showUberHandoff(context);
+        if (widget.uberInstalled) {
+          _showUberHandoff(context);
+        } else {
+          _showPrototypeMessage(
+            context,
+            message: 'Uber 앱스토어 페이지를 열 준비가 되었습니다.',
+          );
+        }
         return;
       case _TravelMode.transit:
         _openTransitGuide(context);
@@ -5772,15 +5837,27 @@ class _RouteComparisonScreenState extends State<RouteComparisonScreen> {
             const SizedBox(height: 10),
             _TransportOptionCard(
               selected: selected == _TravelMode.uber,
+              available: widget.uberInstalled,
               icon: Icons.local_taxi_rounded,
               title: 'Uber',
-              badge: 'FASTEST',
+              badge: widget.uberInstalled ? 'FASTEST' : 'APP NEEDED',
               duration: '17–22 min',
-              arrival: 'Arrive 1:49–1:54 PM',
+              arrival: widget.uberInstalled
+                  ? 'Arrive 1:49–1:54 PM'
+                  : 'Uber is not installed',
               cost: '₩13,000–17,000',
-              note: 'Pickup 3 min away · Traffic included',
+              note: widget.uberInstalled
+                  ? 'Pickup 3 min away · Traffic included'
+                  : 'Install Uber to request this ride',
               onTap: () => setState(() => selected = _TravelMode.uber),
             ),
+            if (selected == _TravelMode.uber && !widget.uberInstalled) ...[
+              const SizedBox(height: 8),
+              _UberUnavailableNotice(
+                onUseTransit: () =>
+                    setState(() => selected = _TravelMode.transit),
+              ),
+            ],
             const SizedBox(height: 9),
             _TransportOptionCard(
               selected: selected == _TravelMode.transit,
@@ -5841,7 +5918,8 @@ class _RouteComparisonScreenState extends State<RouteComparisonScreen> {
             const SizedBox(height: 15),
             _PrimaryAction(
               label: switch (selected) {
-                _TravelMode.uber => 'Prepare Uber',
+                _TravelMode.uber =>
+                  widget.uberInstalled ? 'Prepare Uber' : 'Install Uber',
                 _TravelMode.transit => 'View transit steps',
                 _TravelMode.walk => 'Start walking directions',
               },
@@ -6070,6 +6148,61 @@ class _TransitMapPoint {
   final Object marker;
 }
 
+class _UberUnavailableNotice extends StatelessWidget {
+  const _UberUnavailableNotice({required this.onUseTransit});
+
+  final VoidCallback onUseTransit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEFEC),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0xFFE6B7AB)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.mobile_off_rounded,
+            color: Color(0xFFB64B43),
+            size: 19,
+          ),
+          const SizedBox(width: 9),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Uber app required',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Install Uber to request this ride. You can still compare the estimate.',
+                  style: TextStyle(fontSize: 11, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          TextButton(
+            onPressed: onUseTransit,
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Use transit'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TransitPointMap extends StatelessWidget {
   const _TransitPointMap({
     super.key,
@@ -6159,6 +6292,7 @@ class _TransitPointMap extends StatelessWidget {
 class _TransportOptionCard extends StatelessWidget {
   const _TransportOptionCard({
     required this.selected,
+    this.available = true,
     required this.icon,
     required this.title,
     required this.badge,
@@ -6170,6 +6304,7 @@ class _TransportOptionCard extends StatelessWidget {
   });
 
   final bool selected;
+  final bool available;
   final IconData icon;
   final String title;
   final String badge;
@@ -6191,10 +6326,18 @@ class _TransportOptionCard extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: selected ? AppColors.paleGreen : Colors.white,
+            color: !available
+                ? const Color(0xFFFFF8F5)
+                : selected
+                ? AppColors.paleGreen
+                : Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: selected ? AppColors.green : AppColors.line,
+              color: !available
+                  ? const Color(0xFFE6B7AB)
+                  : selected
+                  ? AppColors.green
+                  : AppColors.line,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -6209,7 +6352,13 @@ class _TransportOptionCard extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: AppColors.green, size: 20),
+                    child: Icon(
+                      icon,
+                      color: available
+                          ? AppColors.green
+                          : const Color(0xFFB64B43),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -6234,7 +6383,9 @@ class _TransportOptionCard extends StatelessWidget {
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: selected
+                                color: !available
+                                    ? const Color(0xFFFFE4DE)
+                                    : selected
                                     ? AppColors.green
                                     : const Color(0xFFF0F2EF),
                                 borderRadius: BorderRadius.circular(6),
@@ -6242,7 +6393,9 @@ class _TransportOptionCard extends StatelessWidget {
                               child: Text(
                                 badge,
                                 style: TextStyle(
-                                  color: selected
+                                  color: !available
+                                      ? const Color(0xFFB64B43)
+                                      : selected
                                       ? Colors.white
                                       : AppColors.muted,
                                   fontSize: 11,
@@ -6798,22 +6951,102 @@ class _DepartureImpact extends StatelessWidget {
   }
 }
 
-enum _DefaultTravelMode { uber, transit, walk }
+enum DefaultTravelMode { uber, transit, walk }
+
+class TravelPreferences {
+  const TravelPreferences({
+    this.userLanguage = 'English',
+    this.destinationLanguage = '한국어 · Korean',
+    this.locationAllowed = true,
+    this.uberInstalled = true,
+    this.defaultMode = DefaultTravelMode.transit,
+  });
+
+  const TravelPreferences.standaloneHome()
+    : userLanguage = 'English',
+      destinationLanguage = '한국어 · Korean',
+      locationAllowed = true,
+      uberInstalled = true,
+      defaultMode = DefaultTravelMode.uber;
+
+  final String userLanguage;
+  final String destinationLanguage;
+  final bool locationAllowed;
+  final bool uberInstalled;
+  final DefaultTravelMode defaultMode;
+}
+
+String _travelCopy(
+  String language, {
+  required String english,
+  required String korean,
+  required String japanese,
+}) {
+  if (language.startsWith('한국어')) return korean;
+  if (language.startsWith('日本語')) return japanese;
+  return english;
+}
 
 class ProfileSettingsScreen extends StatefulWidget {
-  const ProfileSettingsScreen({super.key});
+  const ProfileSettingsScreen({
+    super.key,
+    this.initialPreferences = const TravelPreferences(),
+    this.onSaved,
+  });
+
+  final TravelPreferences initialPreferences;
+  final ValueChanged<TravelPreferences>? onSaved;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  String userLanguage = 'English';
-  String destinationLanguage = '한국어 · Korean';
-  bool locationAllowed = true;
-  bool uberInstalled = true;
+  late String userLanguage;
+  late String destinationLanguage;
+  late bool locationAllowed;
+  late bool uberInstalled;
   bool uberChecked = false;
-  _DefaultTravelMode defaultMode = _DefaultTravelMode.transit;
+  bool uberChecking = false;
+  late DefaultTravelMode defaultMode;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialPreferences;
+    userLanguage = initial.userLanguage;
+    destinationLanguage = initial.destinationLanguage;
+    locationAllowed = initial.locationAllowed;
+    uberInstalled = initial.uberInstalled;
+    defaultMode = initial.defaultMode;
+  }
+
+  void _saveSettings() {
+    widget.onSaved?.call(
+      TravelPreferences(
+        userLanguage: userLanguage,
+        destinationLanguage: destinationLanguage,
+        locationAllowed: locationAllowed,
+        uberInstalled: uberInstalled,
+        defaultMode: defaultMode,
+      ),
+    );
+    _showPrototypeMessage(context, message: '사용자 설정이 여행 UI에 반영되었습니다.');
+  }
+
+  Future<void> _checkUberStatus() async {
+    setState(() => uberChecking = true);
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    setState(() {
+      uberChecking = false;
+      uberChecked = true;
+      uberInstalled = false;
+      if (defaultMode == DefaultTravelMode.uber) {
+        defaultMode = DefaultTravelMode.transit;
+      }
+    });
+  }
 
   Future<void> _pickUserLanguage() async {
     final value = await _showSettingPicker(
@@ -6942,7 +7175,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       _UberInstallTile(
                         installed: uberInstalled,
                         checked: uberChecked,
-                        onCheck: () => setState(() => uberChecked = true),
+                        checking: uberChecking,
+                        onCheck: _checkUberStatus,
+                        onInstall: () => _showPrototypeMessage(
+                          context,
+                          message: 'Uber 앱스토어 페이지를 열 준비가 되었습니다.',
+                        ),
                       ),
                     ],
                   ),
@@ -6958,33 +7196,42 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     children: [
                       Expanded(
                         child: _DefaultModeOption(
-                          selected: defaultMode == _DefaultTravelMode.uber,
+                          selected: defaultMode == DefaultTravelMode.uber,
                           icon: Icons.local_taxi_rounded,
                           label: 'Uber',
-                          onTap: () => setState(
-                            () => defaultMode = _DefaultTravelMode.uber,
-                          ),
+                          onTap: () {
+                            if (!uberInstalled) {
+                              _showPrototypeMessage(
+                                context,
+                                message: 'Uber 설치 후 기본 이동수단으로 선택할 수 있습니다.',
+                              );
+                              return;
+                            }
+                            setState(
+                              () => defaultMode = DefaultTravelMode.uber,
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 7),
                       Expanded(
                         child: _DefaultModeOption(
-                          selected: defaultMode == _DefaultTravelMode.transit,
+                          selected: defaultMode == DefaultTravelMode.transit,
                           icon: Icons.directions_subway_rounded,
                           label: 'Transit',
                           onTap: () => setState(
-                            () => defaultMode = _DefaultTravelMode.transit,
+                            () => defaultMode = DefaultTravelMode.transit,
                           ),
                         ),
                       ),
                       const SizedBox(width: 7),
                       Expanded(
                         child: _DefaultModeOption(
-                          selected: defaultMode == _DefaultTravelMode.walk,
+                          selected: defaultMode == DefaultTravelMode.walk,
                           icon: Icons.directions_walk_rounded,
                           label: 'Walk',
                           onTap: () => setState(
-                            () => defaultMode = _DefaultTravelMode.walk,
+                            () => defaultMode = DefaultTravelMode.walk,
                           ),
                         ),
                       ),
@@ -7028,8 +7275,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             icon: Icons.check_rounded,
             background: AppColors.green,
             foreground: Colors.white,
-            onTap: () =>
-                _showPrototypeMessage(context, message: '사용자 설정이 저장되었습니다.'),
+            onTap: _saveSettings,
           ),
         ],
       ),
@@ -7166,45 +7412,103 @@ class _UberInstallTile extends StatelessWidget {
   const _UberInstallTile({
     required this.installed,
     required this.checked,
+    required this.checking,
     required this.onCheck,
+    required this.onInstall,
   });
 
   final bool installed;
   final bool checked;
+  final bool checking;
   final VoidCallback onCheck;
+  final VoidCallback onInstall;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
         children: [
-          const _SettingIcon(icon: Icons.local_taxi_outlined),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Uber app',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          Row(
+            children: [
+              _SettingIcon(
+                icon: installed
+                    ? Icons.local_taxi_outlined
+                    : Icons.mobile_off_rounded,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Uber app',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      checking
+                          ? 'Checking this device…'
+                          : installed
+                          ? 'Installed · Ready to open'
+                          : checked
+                          ? 'Checked · Not installed'
+                          : 'Installation not checked',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: checking
+                            ? AppColors.muted
+                            : installed
+                            ? AppColors.green
+                            : const Color(0xFFB64B43),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  installed ? 'Installed · Ready to open' : 'Not installed',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: installed
-                        ? AppColors.green
-                        : const Color(0xFFB64B43),
+              ),
+              if (checking)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
+              else
+                TextButton(
+                  onPressed: installed ? onCheck : onInstall,
+                  child: Text(installed ? 'Check again' : 'Get Uber'),
+                ),
+            ],
+          ),
+          if (!checking && checked && !installed) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEFEC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 17,
+                    color: Color(0xFFB64B43),
                   ),
-                ),
-              ],
+                  SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      'Ride requests are unavailable. Transit and walking remain available.',
+                      style: TextStyle(fontSize: 11, color: AppColors.muted),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: onCheck,
-            child: Text(checked ? 'Checked' : 'Check again'),
-          ),
+          ],
         ],
       ),
     );
@@ -7346,6 +7650,447 @@ Future<String?> _showSettingPicker(
       ),
     ),
   );
+}
+
+enum _RecoveryScenario {
+  loading,
+  emptySearch,
+  offline,
+  locationDenied,
+  routeFailed,
+  uberMissing,
+  staleTransit,
+}
+
+extension on _RecoveryScenario {
+  String get tabLabel => switch (this) {
+    _RecoveryScenario.loading => 'Loading',
+    _RecoveryScenario.emptySearch => 'No results',
+    _RecoveryScenario.offline => 'Offline',
+    _RecoveryScenario.locationDenied => 'Location',
+    _RecoveryScenario.routeFailed => 'Route',
+    _RecoveryScenario.uberMissing => 'Uber',
+    _RecoveryScenario.staleTransit => 'Stale info',
+  };
+
+  String get eyebrow => switch (this) {
+    _RecoveryScenario.loading => 'CHECKING LIVE OPTIONS',
+    _RecoveryScenario.emptySearch => 'SEARCH COMPLETE',
+    _RecoveryScenario.offline => 'CONNECTION LOST',
+    _RecoveryScenario.locationDenied => 'ACTION REQUIRED',
+    _RecoveryScenario.routeFailed => 'ROUTE UNAVAILABLE',
+    _RecoveryScenario.uberMissing => 'APP REQUIRED',
+    _RecoveryScenario.staleTransit => 'LAST UPDATED 8 MIN AGO',
+  };
+
+  String get title => switch (this) {
+    _RecoveryScenario.loading => 'Finding your best route',
+    _RecoveryScenario.emptySearch => 'No places match your search',
+    _RecoveryScenario.offline => "You're offline",
+    _RecoveryScenario.locationDenied => 'Turn on location for live guidance',
+    _RecoveryScenario.routeFailed => 'No route found right now',
+    _RecoveryScenario.uberMissing => "Uber isn't installed",
+    _RecoveryScenario.staleTransit => 'Live times may be outdated',
+  };
+
+  String get description => switch (this) {
+    _RecoveryScenario.loading =>
+      'Checking traffic, train arrivals and walking time to MMCA Seoul.',
+    _RecoveryScenario.emptySearch =>
+      'Try a shorter place name, clear filters or search around your stay.',
+    _RecoveryScenario.offline =>
+      'Live routes cannot refresh, but your saved trip is still available.',
+    _RecoveryScenario.locationDenied =>
+      'NextMate needs your location only while you use directions and nearby search.',
+    _RecoveryScenario.routeFailed =>
+      'Transit data is temporarily unavailable for this departure time.',
+    _RecoveryScenario.uberMissing =>
+      'Install Uber to request a ride, or continue with another travel mode.',
+    _RecoveryScenario.staleTransit =>
+      'Platform and arrival details were saved earlier and may have changed.',
+  };
+
+  String get primaryAction => switch (this) {
+    _RecoveryScenario.loading => 'Cancel route search',
+    _RecoveryScenario.emptySearch => 'Clear search & filters',
+    _RecoveryScenario.offline => 'Try connecting again',
+    _RecoveryScenario.locationDenied => 'Open location settings',
+    _RecoveryScenario.routeFailed => 'Try another travel mode',
+    _RecoveryScenario.uberMissing => 'Open App Store',
+    _RecoveryScenario.staleTransit => 'Refresh live times',
+  };
+
+  String? get secondaryAction => switch (this) {
+    _RecoveryScenario.loading => null,
+    _RecoveryScenario.emptySearch => 'Search near L7 Myeongdong',
+    _RecoveryScenario.offline => 'Use saved trip offline',
+    _RecoveryScenario.locationDenied => 'Enter a starting point',
+    _RecoveryScenario.routeFailed => 'Retry this route',
+    _RecoveryScenario.uberMissing => 'Use public transit instead',
+    _RecoveryScenario.staleTransit => 'Keep saved route',
+  };
+
+  String get availableTitle => switch (this) {
+    _RecoveryScenario.loading => 'You can keep browsing your itinerary',
+    _RecoveryScenario.emptySearch => 'Your existing itinerary is unchanged',
+    _RecoveryScenario.offline => 'Saved trip available offline',
+    _RecoveryScenario.locationDenied => 'Manual starting point is available',
+    _RecoveryScenario.routeFailed => 'Uber and walking are still available',
+    _RecoveryScenario.uberMissing => 'Transit and walking still work',
+    _RecoveryScenario.staleTransit => 'Saved station steps remain available',
+  };
+
+  IconData get icon => switch (this) {
+    _RecoveryScenario.loading => Icons.route_rounded,
+    _RecoveryScenario.emptySearch => Icons.search_off_rounded,
+    _RecoveryScenario.offline => Icons.wifi_off_rounded,
+    _RecoveryScenario.locationDenied => Icons.location_off_rounded,
+    _RecoveryScenario.routeFailed => Icons.alt_route_rounded,
+    _RecoveryScenario.uberMissing => Icons.mobile_off_rounded,
+    _RecoveryScenario.staleTransit => Icons.history_rounded,
+  };
+
+  Color get color => switch (this) {
+    _RecoveryScenario.loading => AppColors.green,
+    _RecoveryScenario.emptySearch => const Color(0xFF52645A),
+    _RecoveryScenario.offline => const Color(0xFFB64B43),
+    _RecoveryScenario.locationDenied => const Color(0xFFB86D00),
+    _RecoveryScenario.routeFailed => const Color(0xFFB64B43),
+    _RecoveryScenario.uberMissing => const Color(0xFF27332D),
+    _RecoveryScenario.staleTransit => const Color(0xFF9A6800),
+  };
+
+  Color get paleColor => switch (this) {
+    _RecoveryScenario.loading => AppColors.paleGreen,
+    _RecoveryScenario.emptySearch => const Color(0xFFF0F2F0),
+    _RecoveryScenario.offline => const Color(0xFFFFEFEC),
+    _RecoveryScenario.locationDenied => const Color(0xFFFFF2D7),
+    _RecoveryScenario.routeFailed => const Color(0xFFFFEFEC),
+    _RecoveryScenario.uberMissing => const Color(0xFFECEFED),
+    _RecoveryScenario.staleTransit => const Color(0xFFFFF4D9),
+  };
+}
+
+class RecoveryStatesScreen extends StatefulWidget {
+  const RecoveryStatesScreen({super.key});
+
+  @override
+  State<RecoveryStatesScreen> createState() => _RecoveryStatesScreenState();
+}
+
+class _RecoveryStatesScreenState extends State<RecoveryStatesScreen> {
+  _RecoveryScenario scenario = _RecoveryScenario.offline;
+
+  void _handleAction(String action) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('$action selected'),
+          action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PhonePage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _AppHeader(
+            title: 'When plans change',
+            subtitle: 'Clear status · useful fallback · next action',
+            showProfile: false,
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            height: 42,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _RecoveryScenario.values
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(right: 7),
+                        child: ChoiceChip(
+                          label: Text(item.tabLabel),
+                          selected: scenario == item,
+                          showCheckmark: false,
+                          onSelected: (_) => setState(() => scenario = item),
+                          selectedColor: AppColors.deepGreen,
+                          backgroundColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: scenario == item
+                                ? Colors.white
+                                : AppColors.ink,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          side: BorderSide(
+                            color: scenario == item
+                                ? AppColors.deepGreen
+                                : AppColors.line,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: SingleChildScrollView(
+                key: ValueKey(scenario),
+                child: _RecoveryStatePanel(
+                  scenario: scenario,
+                  onPrimary: () => _handleAction(scenario.primaryAction),
+                  onSecondary: scenario.secondaryAction == null
+                      ? null
+                      : () => _handleAction(scenario.secondaryAction!),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecoveryStatePanel extends StatelessWidget {
+  const _RecoveryStatePanel({
+    required this.scenario,
+    required this.onPrimary,
+    required this.onSecondary,
+  });
+
+  final _RecoveryScenario scenario;
+  final VoidCallback onPrimary;
+  final VoidCallback? onSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.line),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: BoxDecoration(
+              color: scenario.paleColor,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Text(
+              scenario.eyebrow,
+              style: TextStyle(
+                color: scenario.color,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: .5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: scenario.paleColor,
+              shape: BoxShape.circle,
+            ),
+            child: scenario == _RecoveryScenario.loading
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: scenario.color,
+                    ),
+                  )
+                : Icon(scenario.icon, color: scenario.color, size: 27),
+          ),
+          const SizedBox(height: 17),
+          Text(
+            scenario.title,
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            scenario.description,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          if (scenario == _RecoveryScenario.loading) ...[
+            const SizedBox(height: 18),
+            const _RouteLoadingPreview(),
+          ],
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: scenario.paleColor,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: scenario.color,
+                  size: 19,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'What still works',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        scenario.availableTitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          _PrimaryAction(
+            label: scenario.primaryAction,
+            icon: scenario == _RecoveryScenario.loading
+                ? Icons.close_rounded
+                : Icons.arrow_forward_rounded,
+            background: scenario.color,
+            foreground: Colors.white,
+            onTap: onPrimary,
+          ),
+          if (onSecondary != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: onSecondary,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.ink,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  side: const BorderSide(color: AppColors.line),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: Text(
+                  scenario.secondaryAction!,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteLoadingPreview extends StatelessWidget {
+  const _RouteLoadingPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const LinearProgressIndicator(
+          minHeight: 4,
+          color: AppColors.green,
+          backgroundColor: AppColors.paleGreen,
+        ),
+        const SizedBox(height: 13),
+        ...List.generate(
+          3,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE9ECE9),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor: index == 1 ? .72 : .55,
+                        child: Container(
+                          height: 9,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E4E0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      FractionallySizedBox(
+                        widthFactor: index == 2 ? .48 : .36,
+                        child: Container(
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF0EE),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class OnboardingScreen extends StatefulWidget {
@@ -7985,6 +8730,7 @@ class TravelAppShell extends StatefulWidget {
 
 class _TravelAppShellState extends State<TravelAppShell> {
   late int selectedIndex;
+  TravelPreferences preferences = const TravelPreferences();
 
   @override
   void initState() {
@@ -8000,12 +8746,16 @@ class _TravelAppShellState extends State<TravelAppShell> {
         index: selectedIndex,
         children: [
           NextMoveHome(
+            preferences: preferences,
             onViewTrip: () => setState(() => selectedIndex = 1),
             onOpenProfile: () => setState(() => selectedIndex = 3),
           ),
           const TripOverviewScreen(showBack: false),
           const PlaceExplorerScreen(showBack: false),
-          const ProfileSettingsScreen(),
+          ProfileSettingsScreen(
+            initialPreferences: preferences,
+            onSaved: (value) => setState(() => preferences = value),
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -8015,32 +8765,52 @@ class _TravelAppShellState extends State<TravelAppShell> {
         backgroundColor: Colors.white,
         indicatorColor: AppColors.paleGreen,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Today',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: _travelCopy(
+              preferences.userLanguage,
+              english: 'Today',
+              korean: '오늘',
+              japanese: '今日',
+            ),
           ),
           NavigationDestination(
-            icon: Badge(
+            icon: const Badge(
               label: Text('2'),
               child: Icon(Icons.calendar_month_outlined),
             ),
-            selectedIcon: Badge(
+            selectedIcon: const Badge(
               label: Text('2'),
               child: Icon(Icons.calendar_month_rounded),
             ),
-            label: 'Trip',
+            label: _travelCopy(
+              preferences.userLanguage,
+              english: 'Trip',
+              korean: '일정',
+              japanese: '旅程',
+            ),
           ),
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore_rounded),
-            label: 'Explore',
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore_rounded),
+            label: _travelCopy(
+              preferences.userLanguage,
+              english: 'Explore',
+              korean: '장소',
+              japanese: '探索',
+            ),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: _travelCopy(
+              preferences.userLanguage,
+              english: 'Profile',
+              korean: '프로필',
+              japanese: '設定',
+            ),
           ),
         ],
       ),
@@ -8049,26 +8819,117 @@ class _TravelAppShellState extends State<TravelAppShell> {
 }
 
 class NextMoveHome extends StatelessWidget {
-  const NextMoveHome({super.key, this.onViewTrip, this.onOpenProfile});
+  const NextMoveHome({
+    super.key,
+    this.preferences = const TravelPreferences.standaloneHome(),
+    this.onViewTrip,
+    this.onOpenProfile,
+  });
 
+  final TravelPreferences preferences;
   final VoidCallback? onViewTrip;
   final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
+    final language = preferences.userLanguage;
+    final effectiveMode =
+        preferences.defaultMode == DefaultTravelMode.uber &&
+            !preferences.uberInstalled
+        ? DefaultTravelMode.transit
+        : preferences.defaultMode;
+    final modeLabel = switch (effectiveMode) {
+      DefaultTravelMode.uber => 'Uber',
+      DefaultTravelMode.transit => _travelCopy(
+        language,
+        english: 'Transit',
+        korean: '대중교통',
+        japanese: '公共交通',
+      ),
+      DefaultTravelMode.walk => _travelCopy(
+        language,
+        english: 'Walk',
+        korean: '도보',
+        japanese: '徒歩',
+      ),
+    };
+    final destinationName = preferences.destinationLanguage.startsWith('日本語')
+        ? '国立現代美術館 ソウル館 · 2:00 PM'
+        : preferences.destinationLanguage.startsWith('中文')
+        ? '国立现代美术馆 首尔馆 · 2:00 PM'
+        : '국립현대미술관 서울 · 2:00 PM';
+    final primaryLabel = switch (effectiveMode) {
+      DefaultTravelMode.uber => _travelCopy(
+        language,
+        english: 'Prepare an Uber',
+        korean: 'Uber 호출 준비',
+        japanese: 'Uberを準備',
+      ),
+      DefaultTravelMode.transit => _travelCopy(
+        language,
+        english: 'View transit steps',
+        korean: '대중교통 단계 보기',
+        japanese: '乗換案内を見る',
+      ),
+      DefaultTravelMode.walk => _travelCopy(
+        language,
+        english: 'Start walking directions',
+        korean: '도보 길안내 시작',
+        japanese: '徒歩案内を開始',
+      ),
+    };
+    final primaryIcon = switch (effectiveMode) {
+      DefaultTravelMode.uber => Icons.local_taxi_rounded,
+      DefaultTravelMode.transit => Icons.directions_subway_rounded,
+      DefaultTravelMode.walk => Icons.directions_walk_rounded,
+    };
+
+    void openPreferredMode() {
+      switch (effectiveMode) {
+        case DefaultTravelMode.uber:
+          _showUberHandoff(context);
+          return;
+        case DefaultTravelMode.transit:
+          _openTransitGuide(context);
+          return;
+        case DefaultTravelMode.walk:
+          _showPrototypeMessage(context, message: '도보 길안내를 시작할 준비가 되었습니다.');
+          return;
+      }
+    }
+
     return _PhonePage(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _AppHeader(
-              title: 'Seoul · Day 2',
-              subtitle: 'Tuesday, September 15',
+              title: _travelCopy(
+                language,
+                english: 'Seoul · Day 2',
+                korean: '서울 · 여행 2일차',
+                japanese: 'ソウル · 2日目',
+              ),
+              subtitle: _travelCopy(
+                language,
+                english: 'Tuesday, September 15',
+                korean: '9월 15일 화요일',
+                japanese: '9月15日 火曜日',
+              ),
               onProfileTap:
                   onOpenProfile ?? () => _openProfileSettings(context),
             ),
             const SizedBox(height: 22),
-            const _LocationLine(label: 'Bukchon Hanok Village'),
+            _LocationLine(
+              label: 'Bukchon Hanok Village',
+              enabled: preferences.locationAllowed,
+              disabledLabel: _travelCopy(
+                language,
+                english: 'Location off · Using your stay',
+                korean: '위치 꺼짐 · 숙소를 출발지로 사용',
+                japanese: '位置情報オフ · 宿泊先を使用',
+              ),
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
@@ -8079,19 +8940,20 @@ class NextMoveHome extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Text(
-                        'NEXT STOP',
-                        style: TextStyle(
-                          color: Color(0xFFAED8C4),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.4,
+                      Expanded(
+                        child: Text(
+                          '${_travelCopy(language, english: 'NEXT STOP', korean: '다음 장소', japanese: '次の場所')} · ${modeLabel.toUpperCase()}',
+                          style: const TextStyle(
+                            color: Color(0xFFAED8C4),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
                         ),
                       ),
-                      Spacer(),
-                      Icon(Icons.more_horiz, color: Colors.white70),
+                      const Icon(Icons.more_horiz, color: Colors.white70),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -8104,9 +8966,12 @@ class NextMoveHome extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  const Text(
-                    '국립현대미술관 서울 · 2:00 PM',
-                    style: TextStyle(color: Color(0xFFC7D8D0), fontSize: 13),
+                  Text(
+                    destinationName,
+                    style: const TextStyle(
+                      color: Color(0xFFC7D8D0),
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 22),
                   InkWell(
@@ -8171,33 +9036,51 @@ class NextMoveHome extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   _PrimaryAction(
-                    label: 'Prepare an Uber',
-                    icon: Icons.local_taxi_rounded,
+                    label: primaryLabel,
+                    icon: primaryIcon,
                     background: const Color(0xFFF7F0D5),
                     foreground: AppColors.ink,
-                    onTap: () => _showUberHandoff(context),
+                    onTap: openPreferredMode,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 18),
-            const Text('Other ways to get there', style: _sectionTitle),
+            Text(
+              _travelCopy(
+                language,
+                english: 'Other ways to get there',
+                korean: '다른 이동 방법',
+                japanese: 'ほかの移動方法',
+              ),
+              style: _sectionTitle,
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: _ModeTile(
                     icon: Icons.directions_subway_rounded,
-                    title: 'Transit',
+                    title: _travelCopy(
+                      language,
+                      english: 'Transit',
+                      korean: '대중교통',
+                      japanese: '公共交通',
+                    ),
                     detail: '24 min · Direct',
                     onTap: () => _openTransitGuide(context),
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: _ModeTile(
                     icon: Icons.directions_walk_rounded,
-                    title: 'Walk',
+                    title: _travelCopy(
+                      language,
+                      english: 'Walk',
+                      korean: '도보',
+                      japanese: '徒歩',
+                    ),
                     detail: '31 min · 2.1 km',
                   ),
                 ),
@@ -8207,9 +9090,19 @@ class NextMoveHome extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => _openRouteComparison(context),
+                onPressed: () => _openRouteComparison(
+                  context,
+                  uberInstalled: preferences.uberInstalled,
+                ),
                 icon: const Icon(Icons.compare_arrows_rounded, size: 18),
-                label: const Text('Compare time & cost'),
+                label: Text(
+                  _travelCopy(
+                    language,
+                    english: 'Compare time & cost',
+                    korean: '시간과 비용 비교',
+                    japanese: '時間と料金を比較',
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.green,
                   padding: const EdgeInsets.symmetric(vertical: 13),
@@ -8223,7 +9116,17 @@ class NextMoveHome extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Expanded(child: Text('Today', style: _sectionTitle)),
+                Expanded(
+                  child: Text(
+                    _travelCopy(
+                      language,
+                      english: 'Today',
+                      korean: '오늘 일정',
+                      japanese: '今日の予定',
+                    ),
+                    style: _sectionTitle,
+                  ),
+                ),
                 TextButton(
                   onPressed:
                       onViewTrip ??
@@ -8241,7 +9144,14 @@ class NextMoveHome extends StatelessWidget {
                     ),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text('View itinerary'),
+                  child: Text(
+                    _travelCopy(
+                      language,
+                      english: 'View itinerary',
+                      korean: '전체 일정',
+                      japanese: '旅程を見る',
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -8653,24 +9563,42 @@ class _AppHeader extends StatelessWidget {
 }
 
 class _LocationLine extends StatelessWidget {
-  const _LocationLine({required this.label});
+  const _LocationLine({
+    required this.label,
+    this.enabled = true,
+    this.disabledLabel = 'Location is off',
+  });
   final String label;
+  final bool enabled;
+  final String disabledLabel;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.my_location_rounded, size: 16, color: AppColors.green),
+        Icon(
+          enabled ? Icons.my_location_rounded : Icons.location_off_rounded,
+          size: 16,
+          color: enabled ? AppColors.green : const Color(0xFFB86D00),
+        ),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
-            label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            enabled ? label : disabledLabel,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: enabled ? AppColors.ink : const Color(0xFFB86D00),
+            ),
           ),
         ),
-        const Text(
-          'Updated now',
-          style: TextStyle(fontSize: 12, color: AppColors.muted),
+        Text(
+          enabled ? 'Updated now' : 'SETTINGS',
+          style: TextStyle(
+            fontSize: 11,
+            color: enabled ? AppColors.muted : const Color(0xFFB86D00),
+            fontWeight: enabled ? FontWeight.w400 : FontWeight.w800,
+          ),
         ),
       ],
     );
@@ -9217,10 +10145,11 @@ void _openTransitGuide(BuildContext context) {
   );
 }
 
-void _openRouteComparison(BuildContext context) {
+void _openRouteComparison(BuildContext context, {bool uberInstalled = true}) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => const Scaffold(body: RouteComparisonScreen()),
+      builder: (_) =>
+          Scaffold(body: RouteComparisonScreen(uberInstalled: uberInstalled)),
     ),
   );
 }
@@ -9245,7 +10174,9 @@ void _showPrototypeMessage(
   BuildContext context, {
   String message = '다음 단계는 프로토타입에서 제공되지 않습니다.',
 }) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 class _VariantInfo {

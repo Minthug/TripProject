@@ -312,7 +312,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: RouteComparisonScreen())),
+      const MaterialApp(
+        home: Scaffold(body: RouteComparisonScreen(uberInstalled: true)),
+      ),
     );
 
     expect(find.text('Choose how to go'), findsOneWidget);
@@ -345,6 +347,44 @@ void main() {
     await tester.tap(find.text('Prepare Uber'));
     await tester.pumpAndSettle();
     expect(find.text('Ready to open Uber?'), findsOneWidget);
+  });
+
+  testWidgets('route and handoff screens handle missing Uber', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: RouteComparisonScreen(uberInstalled: false)),
+      ),
+    );
+
+    expect(find.text('APP NEEDED'), findsOneWidget);
+    expect(find.text('Uber is not installed'), findsOneWidget);
+    await tester.tap(find.text('Uber'));
+    await tester.pump();
+    expect(find.text('Uber app required'), findsOneWidget);
+    expect(find.text('Use transit'), findsOneWidget);
+    await tester.ensureVisible(find.text('Install Uber'));
+    await tester.tap(find.text('Install Uber'));
+    await tester.pump();
+    expect(find.text('Uber 앱스토어 페이지를 열 준비가 되었습니다.'), findsOneWidget);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: UberHandoffPreview(uberInstalled: false)),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Uber is not installed'), findsOneWidget);
+    expect(find.text('NOT INSTALLED'), findsOneWidget);
+    expect(find.text('Install Uber'), findsOneWidget);
+    expect(
+      find.text('Ride requests are unavailable. Your route details are saved.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('home comparison action opens route comparison', (tester) async {
@@ -457,14 +497,27 @@ void main() {
     await tester.ensureVisible(find.text('Check again'));
     await tester.tap(find.text('Check again'));
     await tester.pump();
-    expect(find.text('Checked'), findsOneWidget);
+    expect(find.text('Checking this device…'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.text('Checked · Not installed'), findsOneWidget);
+    expect(find.text('Get Uber'), findsOneWidget);
+    expect(
+      find.text(
+        'Ride requests are unavailable. Transit and walking remain available.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Get Uber'));
+    await tester.pump();
+    expect(find.text('Uber 앱스토어 페이지를 열 준비가 되었습니다.'), findsOneWidget);
 
     await tester.tap(find.text('Walk'));
     await tester.pump();
     await tester.ensureVisible(find.text('Save settings'));
     await tester.tap(find.text('Save settings'));
     await tester.pump();
-    expect(find.text('사용자 설정이 저장되었습니다.'), findsOneWidget);
+    expect(find.text('사용자 설정이 여행 UI에 반영되었습니다.'), findsOneWidget);
   });
 
   testWidgets('home profile button opens profile settings', (tester) async {
@@ -523,6 +576,73 @@ void main() {
     await tester.tap(find.text('View itinerary'));
     await tester.pump();
     expect(find.text('Your whole trip'), findsOneWidget);
+  });
+
+  testWidgets('saved preferences update the shared travel UI', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: TravelAppShell()));
+
+    final navigation = find.byType(NavigationBar);
+    await tester.tap(
+      find.descendant(of: navigation, matching: find.text('Profile')),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('App language'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('日本語 · Japanese'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Walk'));
+    await tester.tap(find.text('Walk'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Save settings'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pump();
+
+    expect(find.text('今日'), findsOneWidget);
+    await tester.tap(
+      find.descendant(of: navigation, matching: find.text('今日')),
+    );
+    await tester.pump();
+
+    expect(find.text('ソウル · 2日目'), findsOneWidget);
+    expect(find.text('位置情報オフ · 宿泊先を使用'), findsOneWidget);
+    expect(find.text('徒歩案内を開始'), findsOneWidget);
+    expect(find.text('ほかの移動方法'), findsOneWidget);
+  });
+
+  testWidgets('destination language and unavailable default mode are applied', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: NextMoveHome(
+            preferences: TravelPreferences(
+              destinationLanguage: '日本語 · Japanese',
+              uberInstalled: false,
+              defaultMode: DefaultTravelMode.uber,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('国立現代美術館 ソウル館 · 2:00 PM'), findsOneWidget);
+    expect(find.text('View transit steps'), findsOneWidget);
+    expect(find.text('Prepare an Uber'), findsNothing);
   });
 
   testWidgets('first-run onboarding completes feature and setup steps', (
@@ -627,5 +747,38 @@ void main() {
     await tester.tap(find.text('Remove from itinerary'));
     await tester.pumpAndSettle();
     expect(find.text('0 places saved'), findsOneWidget);
+  });
+
+  testWidgets('recovery states explain failures and provide next actions', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: RecoveryStatesScreen())),
+    );
+
+    expect(find.text("You're offline"), findsOneWidget);
+    expect(find.text('Saved trip available offline'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Location'));
+    await tester.tap(find.text('Location'));
+    await tester.pumpAndSettle();
+    expect(find.text('Turn on location for live guidance'), findsOneWidget);
+    expect(find.text('Enter a starting point'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Open location settings'));
+    await tester.tap(find.text('Open location settings'));
+    await tester.pump();
+    expect(find.text('Open location settings selected'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Loading'));
+    await tester.tap(find.text('Loading'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Finding your best route'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 }

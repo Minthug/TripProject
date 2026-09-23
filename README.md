@@ -16,14 +16,15 @@ for the in-trip home screen:
 - **06 · Add place** — searches a map and checks date-specific opening information.
 - **07 · Place detail** — verifies the entrance, reservation, local address, and itinerary state.
 - **08 · Transit guide** — gives tourists step-by-step station and boarding help.
-- **09 · Route comparison** — compares Uber, public transit, and walking time and cost.
-- **10 · Taxi handoff** — confirms pickup and destination before opening Uber.
+- **09 · Route comparison** — compares time and cost while surfacing an unavailable Uber app.
+- **10 · Taxi handoff** — confirms the route or offers installation when Uber is missing.
 - **11 · Driver card** — shows the verified destination in the driver's language.
 - **12 · Departure alert** — manages leave-now, reminder, delay, and skip states.
 - **13 · Profile & settings** — configures languages, permissions, Uber, and travel defaults.
 - **A · Next move** — provides the four-tab travel app shell and next departure.
 - **B · Day timeline** — emphasizes the itinerary and current progress.
 - **C · Live map** — emphasizes location and route comparison.
+- **ST · Recovery states** — previews loading, offline, permission, service, and stale-data recovery.
 
 ## Run the design gallery
 
@@ -31,10 +32,12 @@ for the in-trip home screen:
 flutter run -d chrome
 ```
 
-On a wide browser window, all eighteen mobile frames appear side by side. On a
-narrow window or device, use the ON/00/01/02/03/04/05/06/07/08/09/10/11/12/13/A/B/C selector in the header.
+On a wide browser window, all nineteen mobile frames appear side by side. On a
+narrow window or device, use the ON/00/01/02/03/04/05/06/07/08/09/10/11/12/13/A/B/C/ST selector in the header.
 Use the `A−` and `A+` controls to preview every screen at 100%, 115%, or
 130% text size. The gallery starts at the more readable 115% setting.
+The Uber screens use the normal installed state by default. Append
+`&uber=missing` to the URL to preview the same screens after a failed app check.
 
 Use the **Flow map** tab to see which button connects each internal screen or
 external app. The same map is documented in [`docs/screen-flow.md`](docs/screen-flow.md).
