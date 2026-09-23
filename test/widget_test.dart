@@ -94,6 +94,20 @@ void main() {
     expect(find.text('115%'), findsOneWidget);
   });
 
+  testWidgets('all gallery screens support 130 percent text', (tester) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const TripProjectApp());
+    await tester.tap(find.text('A+'));
+    await tester.pump();
+
+    expect(find.text('130%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Prepare an Uber opens the handoff bottom sheet', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -141,6 +155,7 @@ void main() {
     await tester.pump();
     expect(find.text('Build 2 place itinerary'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Build 2 place itinerary'));
     await tester.tap(find.text('Build 2 place itinerary'));
     await tester.pumpAndSettle();
     expect(find.text('Your whole trip'), findsOneWidget);
@@ -504,6 +519,7 @@ void main() {
 
     await tester.tap(navLabel('Today'));
     await tester.pump();
+    await tester.ensureVisible(find.text('View itinerary'));
     await tester.tap(find.text('View itinerary'));
     await tester.pump();
     expect(find.text('Your whole trip'), findsOneWidget);

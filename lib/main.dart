@@ -537,7 +537,7 @@ class SplashScreenPreview extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFF8EACA0),
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.8,
                 ),
@@ -785,7 +785,7 @@ class _SetupProgress extends StatelessWidget {
             number,
             style: TextStyle(
               color: active ? Colors.white : AppColors.muted,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -794,7 +794,7 @@ class _SetupProgress extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color: active ? AppColors.ink : AppColors.muted,
           ),
@@ -891,7 +891,7 @@ class _TripCalendar extends StatelessWidget {
                   child: Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 9, color: AppColors.muted),
+                    style: TextStyle(fontSize: 11, color: AppColors.muted),
                   ),
                 ),
             ],
@@ -945,12 +945,15 @@ class _TripCalendar extends StatelessWidget {
                 color: AppColors.green,
               ),
               const SizedBox(width: 7),
-              Text(
-                'Sep $startDay – $endDay  ·  ${endDay - startDay + 1} days',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.green,
+              Expanded(
+                child: Text(
+                  'Sep $startDay – $endDay  ·  ${endDay - startDay + 1} days',
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.green,
+                  ),
                 ),
               ),
             ],
@@ -1090,7 +1093,7 @@ class _StayBasedPlannerScreenState extends State<StayBasedPlannerScreen> {
                       Text(
                         'Starting from $stayName',
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: AppColors.muted,
                         ),
                       ),
@@ -1173,7 +1176,7 @@ class _StayTimeline extends StatelessWidget {
                   child: Text(
                     day,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 9, color: AppColors.muted),
+                    style: TextStyle(fontSize: 11, color: AppColors.muted),
                   ),
                 ),
             ],
@@ -1195,7 +1198,7 @@ class _StayTimeline extends StatelessWidget {
                     'L7 · 2 nights',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -1215,7 +1218,7 @@ class _StayTimeline extends StatelessWidget {
                     'Bukchon · 2 nights',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -1237,10 +1240,7 @@ class _StayTimeline extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Sep 16 · Stay move day · Plan luggage',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                   ),
                 ),
                 Icon(Icons.chevron_right_rounded, size: 16),
@@ -1310,7 +1310,7 @@ class _StaySelector extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               dates,
-              style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+              style: const TextStyle(fontSize: 11, color: AppColors.muted),
             ),
           ],
         ),
@@ -1372,11 +1372,11 @@ class _NearbyPlaceCard extends StatelessWidget {
                   '${place.$2} · ${place.$3}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
                 Text(
                   place.$4,
-                  style: const TextStyle(fontSize: 8.5, color: AppColors.green),
+                  style: const TextStyle(fontSize: 11, color: AppColors.green),
                 ),
               ],
             ),
@@ -1393,7 +1393,7 @@ class _NearbyPlaceCard extends StatelessWidget {
                       foregroundColor: AppColors.green,
                       side: const BorderSide(color: AppColors.green),
                     ),
-                    child: const Text('Added', style: TextStyle(fontSize: 9)),
+                    child: const Text('Added', style: TextStyle(fontSize: 11)),
                   )
                 : FilledButton(
                     onPressed: onTap,
@@ -1401,7 +1401,7 @@ class _NearbyPlaceCard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       backgroundColor: AppColors.deepGreen,
                     ),
-                    child: const Text('+ Add', style: TextStyle(fontSize: 9)),
+                    child: const Text('+ Add', style: TextStyle(fontSize: 11)),
                   ),
           ),
         ],
@@ -1501,7 +1501,7 @@ class _AddStayMapScreenState extends State<AddStayMapScreen> {
                       child: const Text(
                         'Seoul',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -1630,7 +1630,7 @@ class _AddStayMapScreenState extends State<AddStayMapScreen> {
                             Text(
                               mapMoved ? 'Move the map to adjust' : localName,
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: AppColors.muted,
                               ),
                             ),
@@ -1750,7 +1750,7 @@ class _StaySearchResult extends StatelessWidget {
       ),
       subtitle: Text(
         detail,
-        style: const TextStyle(fontSize: 9, color: AppColors.muted),
+        style: const TextStyle(fontSize: 11, color: AppColors.muted),
       ),
       trailing: const Icon(Icons.north_west_rounded, size: 15),
     );
@@ -1800,7 +1800,7 @@ class _CenterStayPin extends StatelessWidget {
             'Entrance',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -1842,7 +1842,7 @@ class _LocationCheckRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                style: const TextStyle(fontSize: 11, color: AppColors.muted),
               ),
               Text(
                 detail,
@@ -1995,7 +1995,7 @@ class _StayDatesSheet extends StatelessWidget {
               ),
               Text(
                 address,
-                style: const TextStyle(fontSize: 10, color: AppColors.muted),
+                style: const TextStyle(fontSize: 12, color: AppColors.muted),
               ),
               const SizedBox(height: 17),
               const Row(
@@ -2035,7 +2035,7 @@ class _StayDatesSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Fills your uncovered Sep 16–18 stay · 2 nights',
-                        style: TextStyle(fontSize: 10.5),
+                        style: TextStyle(fontSize: 11),
                       ),
                     ),
                   ],
@@ -2083,7 +2083,7 @@ class _StayDateBox extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 8,
+              fontSize: 11,
               color: AppColors.muted,
               fontWeight: FontWeight.w800,
               letterSpacing: .6,
@@ -2096,7 +2096,7 @@ class _StayDateBox extends StatelessWidget {
           ),
           Text(
             time,
-            style: const TextStyle(fontSize: 10, color: AppColors.muted),
+            style: const TextStyle(fontSize: 12, color: AppColors.muted),
           ),
         ],
       ),
@@ -2267,7 +2267,7 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
                 ),
                 label: const Text('Issues'),
                 labelStyle: TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: issuesOnly ? Colors.white : AppColors.ink,
                 ),
@@ -2345,7 +2345,8 @@ class _OverviewStat extends StatelessWidget {
           color: warning ? const Color(0xFFE9C984) : AppColors.line,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
@@ -2355,11 +2356,11 @@ class _OverviewStat extends StatelessWidget {
               color: warning ? const Color(0xFFB86D00) : AppColors.ink,
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(height: 2),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 8,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: AppColors.muted,
             ),
@@ -2397,7 +2398,7 @@ class _OverviewDateDot extends StatelessWidget {
           Text(
             day.day,
             style: TextStyle(
-              fontSize: 7,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: day.moveDay ? Colors.white70 : AppColors.muted,
             ),
@@ -2458,7 +2459,7 @@ class _OverviewDayCard extends StatelessWidget {
                         Text(
                           day.day,
                           style: TextStyle(
-                            fontSize: 7,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: day.moveDay
                                 ? Colors.white70
@@ -2507,7 +2508,7 @@ class _OverviewDayCard extends StatelessWidget {
                                 child: const Text(
                                   'MOVE DAY',
                                   style: TextStyle(
-                                    fontSize: 7,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -2529,7 +2530,7 @@ class _OverviewDayCard extends StatelessWidget {
                                 day.stay,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 11,
                                   color: AppColors.muted,
                                 ),
                               ),
@@ -2563,10 +2564,7 @@ class _OverviewDayCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          item,
-                          style: const TextStyle(fontSize: 9.5),
-                        ),
+                        child: Text(item, style: const TextStyle(fontSize: 11)),
                       ),
                     ],
                   ),
@@ -2634,7 +2632,7 @@ class _OverviewNotice extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 8.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: color,
               ),
@@ -2731,7 +2729,7 @@ class _FlexibleDayPlanScreenState extends State<FlexibleDayPlanScreen> {
                     ),
                     Text(
                       'Seoul · Today',
-                      style: TextStyle(fontSize: 10, color: AppColors.muted),
+                      style: TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
                   ],
                 ),
@@ -2783,7 +2781,7 @@ class _FlexibleDayPlanScreenState extends State<FlexibleDayPlanScreen> {
                         ? 'All places are available today'
                         : '1 place is closed today',
                     style: const TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2791,7 +2789,7 @@ class _FlexibleDayPlanScreenState extends State<FlexibleDayPlanScreen> {
                 if (orderSuggested)
                   const Text(
                     'Best order applied',
-                    style: TextStyle(fontSize: 8.5, color: AppColors.green),
+                    style: TextStyle(fontSize: 11, color: AppColors.green),
                   ),
               ],
             ),
@@ -2972,7 +2970,7 @@ class _DayPlaceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 8.8,
+                    fontSize: 11,
                     color: closed ? accent : AppColors.muted,
                   ),
                 ),
@@ -2980,7 +2978,7 @@ class _DayPlaceCard extends StatelessWidget {
                 Text(
                   place.note,
                   style: TextStyle(
-                    fontSize: 8.8,
+                    fontSize: 11,
                     color: accent,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2998,7 +2996,7 @@ class _DayPlaceCard extends StatelessWidget {
               ),
               child: const Text(
                 'Move to Wed',
-                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
               ),
             )
           else
@@ -3137,7 +3135,10 @@ class _ReturnModeTile extends StatelessWidget {
                       if (recommended) ...[
                         const Text(
                           'Recommended',
-                          style: TextStyle(fontSize: 8, color: AppColors.green),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.green,
+                          ),
                         ),
                       ],
                     ],
@@ -3145,7 +3146,7 @@ class _ReturnModeTile extends StatelessWidget {
                   Text(
                     detail,
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       color: AppColors.muted,
                     ),
                   ),
@@ -3154,7 +3155,7 @@ class _ReturnModeTile extends StatelessWidget {
             ),
             Text(
               trailing,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -3431,7 +3432,7 @@ class _PlaceExplorerScreenState extends State<PlaceExplorerScreen> {
                             Text(
                               'Add to Tuesday, Sep 15',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: AppColors.muted,
                               ),
                             ),
@@ -3477,7 +3478,7 @@ class _PlaceExplorerScreenState extends State<PlaceExplorerScreen> {
                         child: Text(
                           '${scheduledDays.length} place${scheduledDays.length == 1 ? '' : 's'} saved',
                           style: const TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -3554,7 +3555,7 @@ class _ExploreCategoryChip extends StatelessWidget {
       selectedColor: AppColors.deepGreen,
       labelStyle: TextStyle(
         color: selected ? Colors.white : AppColors.ink,
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: FontWeight.w700,
       ),
       side: BorderSide(color: selected ? AppColors.deepGreen : AppColors.line),
@@ -3603,7 +3604,7 @@ class _ExploreMapLabel extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -3681,7 +3682,7 @@ class _ExplorePlaceCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 8.5,
+                        fontSize: 11,
                         color: AppColors.muted,
                       ),
                     ),
@@ -3690,7 +3691,7 @@ class _ExplorePlaceCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 8.5,
+                        fontSize: 11,
                         color: accent,
                         fontWeight: FontWeight.w700,
                       ),
@@ -3712,7 +3713,7 @@ class _ExplorePlaceCard extends StatelessWidget {
                         ),
                         child: const Text(
                           'Added',
-                          style: TextStyle(fontSize: 9),
+                          style: TextStyle(fontSize: 11),
                         ),
                       )
                     : FilledButton(
@@ -3725,7 +3726,7 @@ class _ExplorePlaceCard extends StatelessWidget {
                         ),
                         child: Text(
                           closed ? 'Sep 16' : '+ Add',
-                          style: const TextStyle(fontSize: 8.5),
+                          style: const TextStyle(fontSize: 11),
                         ),
                       ),
               ),
@@ -3798,7 +3799,7 @@ void _showPlaceSearch(
                   ),
                   subtitle: Text(
                     '${place.local} · ${place.hours}',
-                    style: const TextStyle(fontSize: 9),
+                    style: const TextStyle(fontSize: 11),
                   ),
                 ),
             ],
@@ -3960,7 +3961,7 @@ class _ExplorePlaceDetailSheetState extends State<_ExplorePlaceDetailSheet> {
                       child: Text(
                         editing ? 'IN YOUR ITINERARY' : 'PLACE DETAILS',
                         style: TextStyle(
-                          fontSize: 8,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: .5,
                           color: editing ? AppColors.green : Colors.white,
@@ -4085,7 +4086,7 @@ class _ExplorePlaceDetailSheetState extends State<_ExplorePlaceDetailSheet> {
                   child: Text(
                     place.note,
                     style: const TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -4164,7 +4165,7 @@ class _DetailDayChip extends StatelessWidget {
               Text(
                 '$day $date',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: selected ? Colors.white : AppColors.ink,
                 ),
@@ -4176,7 +4177,7 @@ class _DetailDayChip extends StatelessWidget {
                     ? 'Best day'
                     : 'Open',
                 style: TextStyle(
-                  fontSize: 8,
+                  fontSize: 11,
                   color: selected
                       ? Colors.white70
                       : closed
@@ -4295,7 +4296,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                     ),
                     Text(
                       '31 min · Lines 2 → 3',
-                      style: TextStyle(fontSize: 10, color: AppColors.muted),
+                      style: TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
                   ],
                 ),
@@ -4317,7 +4318,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                     Text(
                       'Saved',
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 11,
                         color: AppColors.green,
                         fontWeight: FontWeight.w800,
                       ),
@@ -4354,7 +4355,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                           'NOW · STEP ${currentStep + 1} OF ${steps.length}',
                           style: const TextStyle(
                             color: Color(0xFFAED8C4),
-                            fontSize: 9,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1,
                           ),
@@ -4424,7 +4425,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                               Text(
                                 onLine3 ? '종로3가 · 안국 방면' : '을지로3가 · 성수 방면',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 12,
                                   color: onLine3
                                       ? const Color(0xFFF06A24)
                                       : AppColors.green,
@@ -4436,7 +4437,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                                     ? 'Do not take Ogeum direction'
                                     : 'Do not take City Hall · Hongdae direction',
                                 style: const TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 11,
                                   color: Color(0xFFB64B43),
                                 ),
                               ),
@@ -4462,7 +4463,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                             Text(
                               'Subway map',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -4474,7 +4475,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.end,
                                 style: TextStyle(
-                                  fontSize: 8.5,
+                                  fontSize: 11,
                                   color: AppColors.muted,
                                 ),
                               ),
@@ -4498,7 +4499,7 @@ class _TouristTransitGuideScreenState extends State<TouristTransitGuideScreen> {
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.end,
                           style: TextStyle(
-                            fontSize: 8.5,
+                            fontSize: 11,
                             color: AppColors.muted,
                           ),
                         ),
@@ -4635,19 +4636,23 @@ class _LiveTransitStatus extends StatelessWidget {
             children: [
               _LiveDot(),
               SizedBox(width: 6),
-              Text(
-                'LIVE ROUTE STATUS',
-                style: TextStyle(
-                  color: AppColors.green,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .7,
+              Expanded(
+                child: Text(
+                  'LIVE ROUTE STATUS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: .7,
+                  ),
                 ),
               ),
-              Spacer(),
+              SizedBox(width: 8),
               Text(
                 'Updated now',
-                style: TextStyle(fontSize: 8.5, color: AppColors.muted),
+                style: TextStyle(fontSize: 11, color: AppColors.muted),
               ),
             ],
           ),
@@ -4671,7 +4676,7 @@ class _LiveTransitStatus extends StatelessWidget {
                     Text(
                       detail,
                       style: const TextStyle(
-                        fontSize: 9,
+                        fontSize: 11,
                         color: AppColors.muted,
                       ),
                     ),
@@ -4698,7 +4703,7 @@ class _LiveTransitStatus extends StatelessWidget {
               Expanded(
                 child: Text(
                   'GPS can drift underground. Use the step button to keep guidance accurate.',
-                  style: TextStyle(fontSize: 8, color: AppColors.muted),
+                  style: TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ),
             ],
@@ -4744,7 +4749,7 @@ class _LiveFact extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 7,
+                fontSize: 11,
                 color: AppColors.muted,
                 fontWeight: FontWeight.w800,
               ),
@@ -4754,10 +4759,7 @@ class _LiveFact extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 8.5,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -4780,7 +4782,7 @@ class _LiveTransitMap extends StatelessWidget {
       ('Anguk · Exit 1', '안국', '3', 5),
     ];
     return SizedBox(
-      height: 64,
+      height: 84,
       child: Stack(
         children: [
           Positioned(
@@ -4831,7 +4833,7 @@ class _LiveTransitMap extends StatelessWidget {
                         point.$3,
                         style: TextStyle(
                           color: active ? Colors.white : color,
-                          fontSize: transfer ? 8 : 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -4843,14 +4845,14 @@ class _LiveTransitMap extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 7.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
                       point.$2,
                       style: TextStyle(
-                        fontSize: 7,
+                        fontSize: 11,
                         color: transfer
                             ? const Color(0xFFF06A24)
                             : AppColors.muted,
@@ -4977,7 +4979,7 @@ class _TransitStepRow extends StatelessWidget {
                     '$number',
                     style: TextStyle(
                       color: active ? Colors.white : AppColors.muted,
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -4992,7 +4994,7 @@ class _TransitStepRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -5000,7 +5002,7 @@ class _TransitStepRow extends StatelessWidget {
                   step.local,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ],
             ),
@@ -5143,7 +5145,7 @@ class _DriverCardContent extends StatelessWidget {
                           'SHOW TO YOUR DRIVER',
                           style: TextStyle(
                             color: Color(0xFFAED8C4),
-                            fontSize: 9,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
                           ),
@@ -5172,7 +5174,7 @@ class _DriverCardContent extends StatelessWidget {
                       '한국어  KO',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -5261,7 +5263,7 @@ class _DriverCardContent extends StatelessWidget {
                                   Text(
                                     'English check',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 12,
                                       color: AppColors.green,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -5345,7 +5347,7 @@ class _DriverDetail extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                style: const TextStyle(fontSize: 11, color: AppColors.muted),
               ),
               const SizedBox(height: 2),
               Text(
@@ -5461,7 +5463,7 @@ class _UberHandoffSheetContent extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Destination coordinates and Korean address are ready.',
-                      style: TextStyle(fontSize: 10.5),
+                      style: TextStyle(fontSize: 11),
                     ),
                   ),
                 ],
@@ -5512,7 +5514,7 @@ class _UberHandoffSheetContent extends StatelessWidget {
             const Center(
               child: Text(
                 'Fare, vehicle selection and payment continue in Uber.',
-                style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                style: TextStyle(fontSize: 11, color: AppColors.muted),
               ),
             ),
           ],
@@ -5537,7 +5539,7 @@ class _UberBadge extends StatelessWidget {
         'UBER',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w800,
           letterSpacing: .8,
         ),
@@ -5644,7 +5646,7 @@ class _RouteAddress extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 8,
+            fontSize: 11,
             color: AppColors.muted,
             fontWeight: FontWeight.w800,
             letterSpacing: .7,
@@ -5657,7 +5659,7 @@ class _RouteAddress extends StatelessWidget {
         ),
         Text(
           detail,
-          style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+          style: const TextStyle(fontSize: 11, color: AppColors.muted),
         ),
       ],
     );
@@ -5761,7 +5763,7 @@ class _RouteComparisonScreenState extends State<RouteComparisonScreen> {
                   'Leave 1:32 PM',
                   style: TextStyle(
                     color: AppColors.green,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -5831,7 +5833,7 @@ class _RouteComparisonScreenState extends State<RouteComparisonScreen> {
                 Expanded(
                   child: Text(
                     'Times and fares are estimates and may change with traffic or service conditions.',
-                    style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                    style: TextStyle(fontSize: 11, color: AppColors.muted),
                   ),
                 ),
               ],
@@ -5908,7 +5910,7 @@ class _TransitRoutePreview extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -5917,7 +5919,7 @@ class _TransitRoutePreview extends StatelessWidget {
               Text(
                 subway ? '1 stop' : '5 stops',
                 style: const TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   color: AppColors.muted,
                   fontWeight: FontWeight.w700,
                 ),
@@ -5981,7 +5983,7 @@ class _TransitRoutePreview extends StatelessWidget {
                   subway
                       ? 'Orange signs · No transfer · Exit 6'
                       : 'Blue bus · No transfer · Get off at MMCA',
-                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ),
             ],
@@ -6039,7 +6041,7 @@ class _TransitRouteTab extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: selected ? Colors.white : AppColors.ink,
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -6047,7 +6049,7 @@ class _TransitRouteTab extends StatelessWidget {
                     detail,
                     style: TextStyle(
                       color: selected ? Colors.white60 : AppColors.muted,
-                      fontSize: 8,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -6081,7 +6083,7 @@ class _TransitPointMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 62,
+      height: 84,
       child: Stack(
         children: [
           Positioned(
@@ -6116,7 +6118,7 @@ class _TransitPointMap extends StatelessWidget {
                                   point.marker as String,
                                   style: TextStyle(
                                     color: color,
-                                    fontSize: 10,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -6128,7 +6130,7 @@ class _TransitPointMap extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 7.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -6138,7 +6140,7 @@ class _TransitPointMap extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 7,
+                            fontSize: 11,
                             color: AppColors.muted,
                           ),
                         ),
@@ -6243,7 +6245,7 @@ class _TransportOptionCard extends StatelessWidget {
                                   color: selected
                                       ? Colors.white
                                       : AppColors.muted,
-                                  fontSize: 7.5,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: .4,
                                 ),
@@ -6255,7 +6257,7 @@ class _TransportOptionCard extends StatelessWidget {
                         Text(
                           arrival,
                           style: const TextStyle(
-                            fontSize: 9.5,
+                            fontSize: 11,
                             color: AppColors.muted,
                           ),
                         ),
@@ -6284,7 +6286,7 @@ class _TransportOptionCard extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   note,
-                  style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ),
             ],
@@ -6311,7 +6313,7 @@ class _EstimateValue extends StatelessWidget {
             label,
             style: const TextStyle(
               color: AppColors.muted,
-              fontSize: 7.5,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: .6,
             ),
@@ -6439,7 +6441,7 @@ class _DepartureAlertScreenState extends State<DepartureAlertScreen> {
                               eyebrow,
                               style: TextStyle(
                                 color: statusColor,
-                                fontSize: 9,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1,
                               ),
@@ -6449,7 +6451,7 @@ class _DepartureAlertScreenState extends State<DepartureAlertScreen> {
                               '1:08 PM',
                               style: TextStyle(
                                 color: Colors.white60,
-                                fontSize: 10,
+                                fontSize: 12,
                               ),
                             ),
                           ],
@@ -6490,7 +6492,7 @@ class _DepartureAlertScreenState extends State<DepartureAlertScreen> {
                   const SizedBox(height: 4),
                   const Text(
                     'Choose once. You can change it again at any time.',
-                    style: TextStyle(fontSize: 10, color: AppColors.muted),
+                    style: TextStyle(fontSize: 12, color: AppColors.muted),
                   ),
                   const SizedBox(height: 11),
                   Row(
@@ -6616,7 +6618,7 @@ class _DepartureDestination extends StatelessWidget {
                 ),
                 Text(
                   local,
-                  style: const TextStyle(color: Colors.white60, fontSize: 9),
+                  style: const TextStyle(color: Colors.white60, fontSize: 11),
                 ),
               ],
             ),
@@ -6625,7 +6627,7 @@ class _DepartureDestination extends StatelessWidget {
             time,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -6692,7 +6694,7 @@ class _DepartureActionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -6702,7 +6704,7 @@ class _DepartureActionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 8.5,
+                        fontSize: 11,
                         color: AppColors.muted,
                       ),
                     ),
@@ -6778,14 +6780,14 @@ class _DepartureImpact extends StatelessWidget {
                   title,
                   style: TextStyle(
                     color: color,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   detail,
-                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ],
             ),
@@ -6890,7 +6892,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 'Seoul trip · Sep 14–18',
                                 style: TextStyle(
                                   color: Colors.white60,
-                                  fontSize: 10,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -6949,7 +6951,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   const SizedBox(height: 4),
                   const Text(
                     'Used first when NextMate recommends your next move.',
-                    style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                    style: TextStyle(fontSize: 11, color: AppColors.muted),
                   ),
                   const SizedBox(height: 9),
                   Row(
@@ -7008,7 +7010,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           child: Text(
                             'Location is used only for routes and nearby guidance while you use the app.',
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 11,
                               color: AppColors.muted,
                             ),
                           ),
@@ -7091,7 +7093,7 @@ class _SettingsTile extends StatelessWidget {
                   Text(
                     detail,
                     style: const TextStyle(
-                      fontSize: 8.5,
+                      fontSize: 11,
                       color: AppColors.muted,
                     ),
                   ),
@@ -7107,7 +7109,7 @@ class _SettingsTile extends StatelessWidget {
                 textAlign: TextAlign.end,
                 style: const TextStyle(
                   color: AppColors.green,
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -7146,7 +7148,7 @@ class _PermissionTile extends StatelessWidget {
                 Text(
                   allowed ? 'While using the app' : 'Location guidance is off',
                   style: TextStyle(
-                    fontSize: 8.5,
+                    fontSize: 11,
                     color: allowed ? AppColors.green : const Color(0xFFB64B43),
                   ),
                 ),
@@ -7190,7 +7192,7 @@ class _UberInstallTile extends StatelessWidget {
                 Text(
                   installed ? 'Installed · Ready to open' : 'Not installed',
                   style: TextStyle(
-                    fontSize: 8.5,
+                    fontSize: 11,
                     color: installed
                         ? AppColors.green
                         : const Color(0xFFB64B43),
@@ -7260,10 +7262,7 @@ class _DefaultModeOption extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 3),
             Icon(
@@ -7433,7 +7432,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             'STEP ${step + 1} OF 4',
             style: const TextStyle(
               color: AppColors.green,
-              fontSize: 8.5,
+              fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
@@ -7575,7 +7574,7 @@ class _OnboardingLanguage extends StatelessWidget {
               Expanded(
                 child: Text(
                   'For this Seoul trip, Korean names and addresses will also be shown.',
-                  style: TextStyle(fontSize: 9.5, color: AppColors.muted),
+                  style: TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ),
             ],
@@ -7655,7 +7654,7 @@ class _OnboardingLocation extends StatelessWidget {
             'Location permission is ready.',
             style: TextStyle(
               color: AppColors.green,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -7707,7 +7706,7 @@ class _OnboardingUber extends StatelessWidget {
                   'UBER',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -7729,7 +7728,7 @@ class _OnboardingUber extends StatelessWidget {
                       installed ? 'Installed · Ready' : 'Not confirmed yet',
                       style: TextStyle(
                         color: installed ? AppColors.green : AppColors.muted,
-                        fontSize: 9.5,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -7776,7 +7775,7 @@ class _OnboardingUber extends StatelessWidget {
         const Center(
           child: Text(
             'You can finish setup even without Uber.',
-            style: TextStyle(fontSize: 9, color: AppColors.muted),
+            style: TextStyle(fontSize: 11, color: AppColors.muted),
           ),
         ),
       ],
@@ -7880,7 +7879,7 @@ class _OnboardingFeature extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   detail,
-                  style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
                 ),
               ],
             ),
@@ -7934,7 +7933,10 @@ class _OnboardingChoice extends StatelessWidget {
                   ),
                   Text(
                     detail,
-                    style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -7966,7 +7968,7 @@ class _PermissionReason extends StatelessWidget {
       const SizedBox(width: 8),
       Text(
         title,
-        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
       ),
     ],
   );
@@ -8152,7 +8154,7 @@ class NextMoveHome extends StatelessWidget {
                             'MANAGE',
                             style: TextStyle(
                               color: AppColors.yellow,
-                              fontSize: 8,
+                              fontSize: 11,
                               fontWeight: FontWeight.w900,
                               letterSpacing: .6,
                             ),
@@ -8221,8 +8223,7 @@ class NextMoveHome extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Text('Today', style: _sectionTitle),
-                const Spacer(),
+                const Expanded(child: Text('Today', style: _sectionTitle)),
                 TextButton(
                   onPressed:
                       onViewTrip ??
@@ -8232,6 +8233,14 @@ class NextMoveHome extends StatelessWidget {
                               const Scaffold(body: TripOverviewScreen()),
                         ),
                       ),
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   child: const Text('View itinerary'),
                 ),
               ],
@@ -8661,7 +8670,7 @@ class _LocationLine extends StatelessWidget {
         ),
         const Text(
           'Updated now',
-          style: TextStyle(fontSize: 10, color: AppColors.muted),
+          style: TextStyle(fontSize: 12, color: AppColors.muted),
         ),
       ],
     );
@@ -8743,7 +8752,7 @@ class _ModeTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               detail,
-              style: const TextStyle(fontSize: 10, color: AppColors.muted),
+              style: const TextStyle(fontSize: 12, color: AppColors.muted),
             ),
           ],
         ),
@@ -8874,7 +8883,7 @@ class _TimelineRow extends StatelessWidget {
         ? const Color(0xFFE7B542)
         : const Color(0xFFCBD0CC);
     return SizedBox(
-      height: 72,
+      height: 80,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -9188,7 +9197,7 @@ class _RouteChoice extends StatelessWidget {
             Text(
               trailing,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 color: selected ? AppColors.green : AppColors.muted,
                 fontWeight: FontWeight.w800,
               ),
