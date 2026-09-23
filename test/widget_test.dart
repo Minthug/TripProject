@@ -468,6 +468,47 @@ void main() {
     expect(find.text('Default travel mode'), findsOneWidget);
   });
 
+  testWidgets('app shell switches between four root destinations', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: TravelAppShell()));
+
+    final navigation = find.byType(NavigationBar);
+    Finder navLabel(String label) =>
+        find.descendant(of: navigation, matching: find.text(label));
+
+    expect(navLabel('Today'), findsOneWidget);
+    expect(navLabel('Trip'), findsOneWidget);
+    expect(navLabel('Explore'), findsOneWidget);
+    expect(navLabel('Profile'), findsOneWidget);
+    expect(find.text('Seoul · Day 2'), findsOneWidget);
+
+    await tester.tap(navLabel('Trip'));
+    await tester.pump();
+    expect(find.text('Your whole trip'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
+
+    await tester.tap(navLabel('Explore'));
+    await tester.pump();
+    expect(find.text('Search places in Seoul'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
+
+    await tester.tap(navLabel('Profile'));
+    await tester.pump();
+    expect(find.text('Profile & settings'), findsOneWidget);
+
+    await tester.tap(navLabel('Today'));
+    await tester.pump();
+    await tester.tap(find.text('View itinerary'));
+    await tester.pump();
+    expect(find.text('Your whole trip'), findsOneWidget);
+  });
+
   testWidgets('first-run onboarding completes feature and setup steps', (
     tester,
   ) async {

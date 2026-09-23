@@ -21,7 +21,7 @@ for the in-trip home screen:
 - **11 · Driver card** — shows the verified destination in the driver's language.
 - **12 · Departure alert** — manages leave-now, reminder, delay, and skip states.
 - **13 · Profile & settings** — configures languages, permissions, Uber, and travel defaults.
-- **A · Next move** — emphasizes the next destination and departure time.
+- **A · Next move** — provides the four-tab travel app shell and next departure.
 - **B · Day timeline** — emphasizes the itinerary and current progress.
 - **C · Live map** — emphasizes location and route comparison.
 

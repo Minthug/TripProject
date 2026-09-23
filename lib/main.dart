@@ -104,7 +104,7 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     12 => const DriverCardPreview(),
     13 => const DepartureAlertScreen(),
     14 => const ProfileSettingsScreen(),
-    15 => const NextMoveHome(),
+    15 => const TravelAppShell(),
     16 => const TimelineHome(),
     _ => const MapFirstHome(),
   };
@@ -1124,9 +1124,9 @@ class _StayBasedPlannerScreenState extends State<StayBasedPlannerScreen> {
               icon: Icons.auto_awesome_rounded,
               background: AppColors.green,
               foreground: Colors.white,
-              onTap: () => Navigator.of(context).push(
+              onTap: () => Navigator.of(context).pushReplacement(
                 MaterialPageRoute<void>(
-                  builder: (_) => const Scaffold(body: TripOverviewScreen()),
+                  builder: (_) => const TravelAppShell(initialIndex: 1),
                 ),
               ),
             ),
@@ -2105,7 +2105,9 @@ class _StayDateBox extends StatelessWidget {
 }
 
 class TripOverviewScreen extends StatefulWidget {
-  const TripOverviewScreen({super.key});
+  const TripOverviewScreen({super.key, this.showBack = true});
+
+  final bool showBack;
 
   @override
   State<TripOverviewScreen> createState() => _TripOverviewScreenState();
@@ -2171,13 +2173,15 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
         children: [
           Row(
             children: [
-              _MapCircleButton(
-                icon: Icons.arrow_back_rounded,
-                onTap: Navigator.of(context).canPop()
-                    ? () => Navigator.pop(context)
-                    : null,
-              ),
-              const SizedBox(width: 11),
+              if (widget.showBack) ...[
+                _MapCircleButton(
+                  icon: Icons.arrow_back_rounded,
+                  onTap: Navigator.of(context).canPop()
+                      ? () => Navigator.pop(context)
+                      : null,
+                ),
+                const SizedBox(width: 11),
+              ],
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3160,7 +3164,9 @@ class _ReturnModeTile extends StatelessWidget {
 }
 
 class PlaceExplorerScreen extends StatefulWidget {
-  const PlaceExplorerScreen({super.key});
+  const PlaceExplorerScreen({super.key, this.showBack = true});
+
+  final bool showBack;
 
   @override
   State<PlaceExplorerScreen> createState() => _PlaceExplorerScreenState();
@@ -3260,13 +3266,15 @@ class _PlaceExplorerScreenState extends State<PlaceExplorerScreen> {
               children: [
                 Row(
                   children: [
-                    _MapCircleButton(
-                      icon: Icons.arrow_back_rounded,
-                      onTap: Navigator.of(context).canPop()
-                          ? () => Navigator.pop(context)
-                          : null,
-                    ),
-                    const SizedBox(width: 10),
+                    if (widget.showBack) ...[
+                      _MapCircleButton(
+                        icon: Icons.arrow_back_rounded,
+                        onTap: Navigator.of(context).canPop()
+                            ? () => Navigator.pop(context)
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                    ],
                     Expanded(
                       child: Material(
                         color: Colors.white,
@@ -7964,8 +7972,85 @@ class _PermissionReason extends StatelessWidget {
   );
 }
 
+class TravelAppShell extends StatefulWidget {
+  const TravelAppShell({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
+
+  @override
+  State<TravelAppShell> createState() => _TravelAppShellState();
+}
+
+class _TravelAppShellState extends State<TravelAppShell> {
+  late int selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedIndex = widget.initialIndex.clamp(0, 3);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      body: IndexedStack(
+        index: selectedIndex,
+        children: [
+          NextMoveHome(
+            onViewTrip: () => setState(() => selectedIndex = 1),
+            onOpenProfile: () => setState(() => selectedIndex = 3),
+          ),
+          const TripOverviewScreen(showBack: false),
+          const PlaceExplorerScreen(showBack: false),
+          const ProfileSettingsScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        height: 68,
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (value) => setState(() => selectedIndex = value),
+        backgroundColor: Colors.white,
+        indicatorColor: AppColors.paleGreen,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Today',
+          ),
+          NavigationDestination(
+            icon: Badge(
+              label: Text('2'),
+              child: Icon(Icons.calendar_month_outlined),
+            ),
+            selectedIcon: Badge(
+              label: Text('2'),
+              child: Icon(Icons.calendar_month_rounded),
+            ),
+            label: 'Trip',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore_rounded),
+            label: 'Explore',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class NextMoveHome extends StatelessWidget {
-  const NextMoveHome({super.key});
+  const NextMoveHome({super.key, this.onViewTrip, this.onOpenProfile});
+
+  final VoidCallback? onViewTrip;
+  final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -7977,7 +8062,8 @@ class NextMoveHome extends StatelessWidget {
             _AppHeader(
               title: 'Seoul · Day 2',
               subtitle: 'Tuesday, September 15',
-              onProfileTap: () => _openProfileSettings(context),
+              onProfileTap:
+                  onOpenProfile ?? () => _openProfileSettings(context),
             ),
             const SizedBox(height: 22),
             const _LocationLine(label: 'Bukchon Hanok Village'),
@@ -8138,12 +8224,14 @@ class NextMoveHome extends StatelessWidget {
                 const Text('Today', style: _sectionTitle),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          const Scaffold(body: TripOverviewScreen()),
-                    ),
-                  ),
+                  onPressed:
+                      onViewTrip ??
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const Scaffold(body: TripOverviewScreen()),
+                        ),
+                      ),
                   child: const Text('View itinerary'),
                 ),
               ],
