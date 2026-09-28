@@ -3828,8 +3828,19 @@ void _showExplorePlaceDetail(
         Navigator.pop(sheetContext);
       },
       onRemove: () {
+        final removedDay = scheduledDay;
         onRemove();
         Navigator.pop(sheetContext);
+        if (removedDay != null) {
+          Future<void>.delayed(Duration.zero, () {
+            if (!context.mounted) return;
+            _showUndoMessage(
+              context,
+              message: '${place.title} removed from your itinerary.',
+              onUndo: () => onSave(removedDay),
+            );
+          });
+        }
       },
     ),
   );
@@ -3844,6 +3855,17 @@ class AttractionDetailScreen extends StatefulWidget {
 
 class _AttractionDetailScreenState extends State<AttractionDetailScreen> {
   String? scheduledDay = 'Tuesday, Sep 15';
+
+  void _removePlace() {
+    final removedDay = scheduledDay;
+    setState(() => scheduledDay = null);
+    if (removedDay == null) return;
+    _showUndoMessage(
+      context,
+      message: 'Myeongdong Cathedral removed from your itinerary.',
+      onUndo: () => setState(() => scheduledDay = removedDay),
+    );
+  }
 
   static const place = _ExplorePlace(
     id: 0,
@@ -3870,7 +3892,7 @@ class _AttractionDetailScreenState extends State<AttractionDetailScreen> {
           place: place,
           scheduledDay: scheduledDay,
           onSave: (day) => setState(() => scheduledDay = day),
-          onRemove: () => setState(() => scheduledDay = null),
+          onRemove: _removePlace,
           fullHeight: true,
         ),
       ),
@@ -3911,6 +3933,60 @@ class _ExplorePlaceDetailSheetState extends State<_ExplorePlaceDetailSheet> {
         (widget.place.state == _ExplorePlaceState.closed
             ? 'Wednesday, Sep 16'
             : 'Tuesday, Sep 15');
+  }
+
+  Future<void> _save() async {
+    if (!editing || selectedDay == widget.scheduledDay) {
+      widget.onSave(selectedDay);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Move ${widget.place.title}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Review the date change before updating your itinerary.',
+            ),
+            const SizedBox(height: 14),
+            _DateChangeRow(
+              label: 'CURRENT',
+              value: widget.scheduledDay!,
+              muted: true,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 7),
+              child: Icon(
+                Icons.arrow_downward_rounded,
+                size: 18,
+                color: AppColors.muted,
+              ),
+            ),
+            _DateChangeRow(label: 'NEW DATE', value: selectedDay),
+            const SizedBox(height: 13),
+            const Text(
+              'Other places keep their current order.',
+              style: TextStyle(fontSize: 11, color: AppColors.muted),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep current date'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Confirm date change'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) widget.onSave(selectedDay);
   }
 
   @override
@@ -4100,7 +4176,7 @@ class _ExplorePlaceDetailSheetState extends State<_ExplorePlaceDetailSheet> {
                   icon: editing ? Icons.check_rounded : Icons.add_rounded,
                   background: closed ? AppColors.line : AppColors.green,
                   foreground: closed ? AppColors.muted : Colors.white,
-                  onTap: closed ? () {} : () => widget.onSave(selectedDay),
+                  onTap: closed ? () {} : _save,
                 ),
                 if (editing) ...[
                   const SizedBox(height: 5),
@@ -4124,6 +4200,49 @@ class _ExplorePlaceDetailSheetState extends State<_ExplorePlaceDetailSheet> {
     );
     if (!widget.fullHeight) return content;
     return SizedBox(height: 780, child: content);
+  }
+}
+
+class _DateChangeRow extends StatelessWidget {
+  const _DateChangeRow({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: muted ? const Color(0xFFF3F5F2) : AppColors.paleGreen,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -6515,7 +6634,13 @@ class _DepartureAlertScreenState extends State<DepartureAlertScreen> {
       ),
     );
     if (confirmed == true && mounted) {
+      final previousChoice = choice;
       setState(() => choice = _DepartureChoice.skipped);
+      _showUndoMessage(
+        context,
+        message: 'MMCA Seoul skipped. Cheonggyecheon is next.',
+        onUndo: () => setState(() => choice = previousChoice),
+      );
     }
   }
 
@@ -10177,6 +10302,22 @@ void _showPrototypeMessage(
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
+}
+
+void _showUndoMessage(
+  BuildContext context, {
+  required String message,
+  required VoidCallback onUndo,
+}) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text(message),
+        action: SnackBarAction(label: 'UNDO', onPressed: onUndo),
+      ),
+    );
 }
 
 class _VariantInfo {

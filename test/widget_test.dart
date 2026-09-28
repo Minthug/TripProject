@@ -447,6 +447,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Cheonggyecheon is next'), findsOneWidget);
     expect(find.text('Plan route to Cheonggyecheon'), findsOneWidget);
+    expect(find.text('UNDO'), findsOneWidget);
+
+    await tester.tap(find.text('UNDO'));
+    await tester.pump();
+    expect(find.text('About 25 minutes delayed'), findsOneWidget);
+    expect(find.text('Plan route to Cheonggyecheon'), findsNothing);
   });
 
   testWidgets('home departure card opens departure status', (tester) async {
@@ -740,6 +746,11 @@ void main() {
     await tester.tap(find.text('Wed 16'));
     await tester.tap(find.text('Save itinerary changes'));
     await tester.pumpAndSettle();
+    expect(find.text('Move Myeongdong Cathedral?'), findsOneWidget);
+    expect(find.text('Tuesday, Sep 15'), findsOneWidget);
+    expect(find.text('Wednesday, Sep 16'), findsOneWidget);
+    await tester.tap(find.text('Confirm date change'));
+    await tester.pumpAndSettle();
     expect(find.text('1 place saved'), findsOneWidget);
 
     await tester.tap(find.text('Myeongdong Cathedral'));
@@ -747,6 +758,11 @@ void main() {
     await tester.tap(find.text('Remove from itinerary'));
     await tester.pumpAndSettle();
     expect(find.text('0 places saved'), findsOneWidget);
+    expect(find.text('UNDO'), findsOneWidget);
+
+    await tester.tap(find.text('UNDO'));
+    await tester.pump();
+    expect(find.text('1 place saved'), findsOneWidget);
   });
 
   testWidgets('recovery states explain failures and provide next actions', (
