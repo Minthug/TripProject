@@ -48,7 +48,11 @@ The flow board can also be opened directly with `/?view=flow`.
 - **Map platform:** Google Maps Platform
 - **Place search:** Google Places API
 - **Mobile framework:** Flutter
+- **Backend platform:** Supabase
+- **Database:** PostgreSQL + PostGIS
 - **Taxi handoff:** Uber deep link
 
 The product baseline, accommodation data model, and multi-stay rules are
 documented in [`docs/product-spec.md`](docs/product-spec.md).
+The backend structure, initial tables, and access model are documented in
+[`docs/backend-architecture.md`](docs/backend-architecture.md).

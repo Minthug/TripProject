@@ -1,0 +1,2 @@
+-- Keep this file free of production or personal data.
+-- Development fixtures will be added after the authentication flow is connected.
