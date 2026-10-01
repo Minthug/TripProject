@@ -19,12 +19,19 @@ Function secrets에 저장한다.
 | 테이블 | 역할 |
 |---|---|
 | `profiles` | 사용자 표시 정보와 앱 언어 |
-| `user_preferences` | 여행지 언어, 위치 권한 상태, Uber 상태, 기본 이동수단 |
+| `user_preferences` | 여행지 언어와 기본 이동수단 |
+| `user_devices` | 기기별 위치 권한, Uber 설치 상태와 푸시 토큰 |
 | `trips` | 여행 기간, 목적지와 현지 시간대 |
 | `trip_members` | 여행 소유자, 편집자, 조회자 권한 |
+| `trip_invitations` | 이메일 기반 동행자 초대와 만료 상태 |
 | `stays` | 숙소와 실제 승하차 입구 좌표 |
 | `places` | 관광지와 실제 방문객 입구 좌표 |
 | `itinerary_items` | 날짜별 장소 순서, 예약과 진행 상태 |
+| `reservations` | 예약 시간, 인원과 예약 참조 정보 |
+| `saved_routes` | 비교·선택한 경로와 오프라인 안내 스냅샷 |
+| `transit_sessions` | 탑승·환승·하차 사용자 확인 진행 상태 |
+| `departure_alerts` | 사용자별 출발·연기·건너뛰기 알림 상태 |
+| `notification_deliveries` | FCM/APNs 발송과 전달 결과 |
 
 장소 중심 좌표와 실제 입구 좌표는 분리해 저장한다. 위·경도는 Flutter에서 쉽게
 사용할 수 있도록 숫자 필드로 제공하고, 거리 검색을 위해 동일 좌표를 PostGIS
@@ -38,6 +45,8 @@ Function secrets에 저장한다.
 - 여행 소유자와 초대된 멤버만 해당 여행을 조회한다.
 - `owner`와 `editor`만 여행 내용, 숙소, 장소와 일정을 변경한다.
 - 멤버 초대와 권한 변경, 여행 삭제는 `owner`만 수행한다.
+- 기기 정보, 출발 알림과 대중교통 진행 상태는 해당 사용자만 변경한다.
+- 알림 발송 기록은 서버만 생성·변경하고 사용자는 자신의 기록만 조회한다.
 - 앱이 다른 사용자의 여행 UUID를 알게 되더라도 RLS가 접근을 차단한다.
 
 ## 배포 방식
