@@ -2,6 +2,31 @@
 
 **Live UI gallery:** https://minthug.github.io/TripProject/
 
+## Project structure
+
+```text
+lib/
+  main.dart             App entry point and gallery assembly
+  ui/
+    gallery/            Screen selector and flow map
+    screens/            One file per preview screen or home variant
+    shared/             Preview colors, widgets, and navigation helpers
+  backend/
+    backend.dart        Supabase initialization and repository access
+    repositories.dart   Auth and database operations
+test/
+  widget_test.dart      Gallery interaction tests
+  backend/              Repository tests
+supabase/
+  migrations/           Database schema and policies
+  tests/                Database access tests
+docs/                   Product and backend notes
+```
+
+The preview screens use Dart `part` files so their existing shared private
+widgets and test imports continue to work. Open `lib/ui/screens/` to find an
+individual screen; `lib/main.dart` now only starts and assembles the gallery.
+
 NextMate is a Flutter prototype for an itinerary-aware travel companion. The
 current build is a design gallery with a launch screen, trip setup, and three alternatives
 for the in-trip home screen:
