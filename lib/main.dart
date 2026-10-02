@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screen_flow_board.dart';
+import 'backend/backend.dart';
 
-void main() => runApp(const TripProjectApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final backend = await NextMateBackend.initialize();
+  runApp(BackendScope(backend: backend, child: const TripProjectApp()));
+}
 
 class TripProjectApp extends StatelessWidget {
   const TripProjectApp({super.key});
