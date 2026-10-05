@@ -1,9 +1,16 @@
 part of '../../main.dart';
 
 class TravelAppShell extends StatefulWidget {
-  const TravelAppShell({super.key, this.initialIndex = 0});
+  const TravelAppShell({
+    super.key,
+    this.initialIndex = 0,
+    this.accountEmail,
+    this.onSignOut,
+  });
 
   final int initialIndex;
+  final String? accountEmail;
+  final Future<void> Function()? onSignOut;
 
   @override
   State<TravelAppShell> createState() => _TravelAppShellState();
@@ -36,6 +43,8 @@ class _TravelAppShellState extends State<TravelAppShell> {
           ProfileSettingsScreen(
             initialPreferences: preferences,
             onSaved: (value) => setState(() => preferences = value),
+            accountEmail: widget.accountEmail,
+            onSignOut: widget.onSignOut,
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/widgets.dart';
 
 import 'repositories.dart';
+import 'auth_redirect.dart';
 
 class BackendScope extends InheritedWidget {
   final NextMateBackend? backend;
@@ -84,6 +85,10 @@ class NextMateBackend {
     await Supabase.initialize(
       url: config.url,
       publishableKey: config.publishableKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        detectSessionInUriPredicate: isAuthCallbackUri,
+      ),
     );
     return NextMateBackend(Supabase.instance.client);
   }

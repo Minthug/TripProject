@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'ui/gallery/screen_flow_board.dart';
 import 'backend/backend.dart';
+import 'auth/auth_gate.dart';
+import 'auth/auth_screen.dart';
 
 part 'ui/shared/colors.dart';
 part 'ui/gallery/design_gallery.dart';
@@ -39,9 +41,10 @@ class TripProjectApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backend = BackendScope.of(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'NextMate UI Gallery',
+      title: backend == null ? 'NextMate UI Gallery' : 'NextMate',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -55,7 +58,18 @@ class TripProjectApp extends StatelessWidget {
           displayColor: AppColors.ink,
         ),
       ),
-      home: const DesignGalleryPage(),
+      home: backend == null
+          ? const DesignGalleryPage()
+          : AuthGate(
+              backend: backend,
+              authenticatedBuilder: (context, session, signOut) =>
+                  TravelAppShell(
+                    accountEmail: session.user.email?.isNotEmpty == true
+                        ? session.user.email
+                        : 'NextMate traveler',
+                    onSignOut: signOut,
+                  ),
+            ),
     );
   }
 }

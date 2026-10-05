@@ -41,10 +41,14 @@ class ProfileSettingsScreen extends StatefulWidget {
     super.key,
     this.initialPreferences = const TravelPreferences(),
     this.onSaved,
+    this.accountEmail,
+    this.onSignOut,
   });
 
   final TravelPreferences initialPreferences;
   final ValueChanged<TravelPreferences>? onSaved;
+  final String? accountEmail;
+  final Future<void> Function()? onSignOut;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -142,37 +146,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       color: AppColors.deepGreen,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         CircleAvatar(
                           radius: 23,
-                          backgroundColor: Color(0xFFF5D67B),
+                          backgroundColor: const Color(0xFFF5D67B),
                           child: Text(
-                            'MK',
-                            style: TextStyle(
+                            widget.accountEmail?.isNotEmpty != true
+                                ? 'MK'
+                                : widget.accountEmail![0].toUpperCase(),
+                            style: const TextStyle(
                               color: AppColors.deepGreen,
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Min Kim',
-                                style: TextStyle(
+                                widget.accountEmail ?? 'Min Kim',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'Seoul trip · Sep 14–18',
-                                style: TextStyle(
+                                widget.accountEmail == null
+                                    ? 'Seoul trip · Sep 14–18'
+                                    : 'NextMate account',
+                                style: const TextStyle(
                                   color: Colors.white60,
                                   fontSize: 12,
                                 ),
@@ -180,7 +188,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             ],
                           ),
                         ),
-                        Icon(
+                        const Icon(
                           Icons.edit_outlined,
                           color: Colors.white70,
                           size: 18,
@@ -315,6 +323,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  if (widget.onSignOut != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: widget.onSignOut,
+                      icon: const Icon(Icons.logout_rounded),
+                      label: const Text('로그아웃'),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ],
               ),
             ),

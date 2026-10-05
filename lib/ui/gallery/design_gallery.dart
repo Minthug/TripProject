@@ -46,6 +46,7 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     _VariantInfo('B', 'Day timeline', '하루 일정의 흐름 중심'),
     _VariantInfo('C', 'Live map', '현재 위치와 경로 중심'),
     _VariantInfo('ST', 'Recovery states', '오류를 설명하고 다음 행동 안내'),
+    _VariantInfo('AU', 'Sign in', 'Google·Apple·이메일 로그인과 회원가입'),
   ];
 
   bool get uberInstalled => Uri.base.queryParameters['uber'] != 'missing';
@@ -69,7 +70,8 @@ class _DesignGalleryPageState extends State<DesignGalleryPage> {
     15 => const TravelAppShell(),
     16 => const TimelineHome(),
     17 => const MapFirstHome(),
-    _ => const RecoveryStatesScreen(),
+    18 => const RecoveryStatesScreen(),
+    _ => const AuthScreen(),
   };
 
   @override

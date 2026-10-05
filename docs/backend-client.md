@@ -18,8 +18,9 @@ Git에 포함하지 않는 위 파일에 다음 빌드 설정을 넣는다.
 ```
 
 화면에서는 `BackendScope.of(context)`로 Repository 모음에 접근한다.
-현재 갤러리 화면은 샘플 데이터를 유지한다. Repository 초기화만으로 기존 버튼이
-원격 CRUD로 바뀌지는 않는다. 화면별 상태 연결과 인증 UI는 후속 작업이다.
+설정이 있는 빌드는 로그인 상태에 따라 인증 화면 또는 여행 화면으로 진입한다.
+설정이 없는 빌드는 UI 갤러리로 시작한다. 여행 화면의 일정 데이터는 아직 샘플이며
+원격 CRUD 연결은 후속 작업이다. OAuth 공급자 설정은 [auth-setup.md](auth-setup.md)를 참고한다.
 
 ```dart
 final backend = BackendScope.of(context)!;

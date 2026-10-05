@@ -7,6 +7,7 @@
 ```text
 lib/
   main.dart             App entry point and gallery assembly
+  auth/                Session gate and sign-in screens
   ui/
     gallery/            Screen selector and flow map
     screens/            One file per preview screen or home variant
@@ -16,6 +17,7 @@ lib/
     repositories.dart   Auth and database operations
 test/
   widget_test.dart      Gallery interaction tests
+  auth/                 Sign-in and session-routing tests
   backend/              Repository tests
 supabase/
   migrations/           Database schema and policies
@@ -27,9 +29,11 @@ The preview screens use Dart `part` files so their existing shared private
 widgets and test imports continue to work. Open `lib/ui/screens/` to find an
 individual screen; `lib/main.dart` now only starts and assembles the gallery.
 
-NextMate is a Flutter prototype for an itinerary-aware travel companion. The
-current build is a design gallery with a launch screen, trip setup, and three alternatives
-for the in-trip home screen:
+NextMate is a Flutter prototype for an itinerary-aware travel companion. Without
+Supabase build settings it opens a design gallery; with them it opens the login
+flow and, after authentication, the travel shell with sample itinerary data. The
+gallery includes a launch screen, trip setup, and three alternatives for the
+in-trip home screen:
 
 - **ON · First-run onboarding** — introduces features and prepares language, location, and Uber.
 - **00 · Splash** — introduces the NextMate brand while app state loads.
@@ -50,6 +54,7 @@ for the in-trip home screen:
 - **B · Day timeline** — emphasizes the itinerary and current progress.
 - **C · Live map** — emphasizes location and route comparison.
 - **ST · Recovery states** — previews loading, offline, permission, service, and stale-data recovery.
+- **AU · Sign in** — previews Google, Apple, and email sign-in or registration.
 
 ## Run the design gallery
 
@@ -57,8 +62,8 @@ for the in-trip home screen:
 flutter run -d chrome
 ```
 
-On a wide browser window, all nineteen mobile frames appear side by side. On a
-narrow window or device, use the ON/00/01/02/03/04/05/06/07/08/09/10/11/12/13/A/B/C/ST selector in the header.
+On a wide browser window, all twenty mobile frames appear side by side. On a
+narrow window or device, use the ON/00/01/02/03/04/05/06/07/08/09/10/11/12/13/A/B/C/ST/AU selector in the header.
 Use the `A−` and `A+` controls to preview every screen at 100%, 115%, or
 130% text size. The gallery starts at the more readable 115% setting.
 The Uber screens use the normal installed state by default. Append
@@ -81,3 +86,5 @@ The product baseline, accommodation data model, and multi-stay rules are
 documented in [`docs/product-spec.md`](docs/product-spec.md).
 The backend structure, initial tables, and access model are documented in
 [`docs/backend-architecture.md`](docs/backend-architecture.md).
+Google·Apple OAuth and session routing setup is documented in
+[`docs/auth-setup.md`](docs/auth-setup.md).

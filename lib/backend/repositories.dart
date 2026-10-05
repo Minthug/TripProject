@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'auth_redirect.dart';
+
 typedef Json = Map<String, dynamic>;
 
 enum FailureKind { unauthenticated, forbidden, conflict, invalid, unavailable }
@@ -52,6 +54,13 @@ class AuthRepository extends Repository {
   Future<AuthResponse> signIn(String email, String password) => request(
     () =>
         client.auth.signInWithPassword(email: email.trim(), password: password),
+  );
+  Future<bool> signInWithOAuth(OAuthProvider provider) => request(
+    () => client.auth.signInWithOAuth(
+      provider,
+      redirectTo: authRedirectUrl,
+      authScreenLaunchMode: LaunchMode.externalApplication,
+    ),
   );
   Future<void> signOut() => request(() => client.auth.signOut());
   Future<void> resetPassword(String email, {required String redirectTo}) =>
