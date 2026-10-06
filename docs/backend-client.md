@@ -18,9 +18,11 @@ Git에 포함하지 않는 위 파일에 다음 빌드 설정을 넣는다.
 ```
 
 화면에서는 `BackendScope.of(context)`로 Repository 모음에 접근한다.
-설정이 있는 빌드는 로그인 상태에 따라 인증 화면 또는 여행 화면으로 진입한다.
-설정이 없는 빌드는 UI 갤러리로 시작한다. 여행 화면의 일정 데이터는 아직 샘플이며
-원격 CRUD 연결은 후속 작업이다. OAuth 공급자 설정은 [auth-setup.md](auth-setup.md)를 참고한다.
+설정이 있는 빌드는 로그인 후 실제 DB 기반 내 여행 화면으로 진입한다.
+여행 생성·수정·삭제, 날짜별 방문 장소 초안·메모·진행 상태를 저장할 수 있다.
+장소 위치와 경로는 외부 API가 아직 연결되지 않아 표시하지 않는다.
+설정이 없는 빌드는 기존 샘플 UI 갤러리로 시작한다. OAuth 공급자 설정은
+[auth-setup.md](auth-setup.md)를 참고한다.
 
 ```dart
 final backend = BackendScope.of(context)!;

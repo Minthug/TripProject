@@ -8,6 +8,7 @@
 lib/
   main.dart             App entry point and gallery assembly
   auth/                Session gate and sign-in screens
+  trips/               Signed-in trip and itinerary workspace
   ui/
     gallery/            Screen selector and flow map
     screens/            One file per preview screen or home variant
@@ -31,7 +32,7 @@ individual screen; `lib/main.dart` now only starts and assembles the gallery.
 
 NextMate is a Flutter prototype for an itinerary-aware travel companion. Without
 Supabase build settings it opens a design gallery; with them it opens the login
-flow and, after authentication, the travel shell with sample itinerary data. The
+flow and, after authentication, a database-backed trip planner. The
 gallery includes a launch screen, trip setup, and three alternatives for the
 in-trip home screen:
 
@@ -75,12 +76,13 @@ The flow board can also be opened directly with `/?view=flow`.
 
 ## Product decisions
 
-- **Map platform:** Google Maps Platform
-- **Place search:** Google Places API
+- **Launch area:** travel within South Korea
+- **Place information:** domestic place API (to be connected), with tourism data as enrichment
+- **Routes:** domestic transit, walking, and road APIs (to be connected)
 - **Mobile framework:** Flutter
 - **Backend platform:** Supabase
 - **Database:** PostgreSQL + PostGIS
-- **Taxi handoff:** Uber deep link
+- **Uber:** deferred until the domestic trip basics work
 
 The product baseline, accommodation data model, and multi-stay rules are
 documented in [`docs/product-spec.md`](docs/product-spec.md).

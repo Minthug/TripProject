@@ -7,7 +7,7 @@
 - 데이터베이스: PostgreSQL 17 + PostGIS
 - 인증: Supabase Auth
 - 서버 로직: Supabase Edge Functions
-- 외부 지도·장소·경로: Google Maps Platform
+- 외부 지도·장소·경로: 국내 지도 API 연동 예정 (현재 미연결)
 - 푸시 알림: FCM/APNs
 
 Flutter는 공개 가능한 Supabase URL과 publishable key만 사용한다. Google API 비밀 키,
@@ -36,6 +36,8 @@ Function secrets에 저장한다.
 장소 중심 좌표와 실제 입구 좌표는 분리해 저장한다. 위·경도는 Flutter에서 쉽게
 사용할 수 있도록 숫자 필드로 제공하고, 거리 검색을 위해 동일 좌표를 PostGIS
 `geography(Point, 4326)` 생성 열과 공간 인덱스로 관리한다.
+장소 API가 연결되기 전에는 이름만 입력한 `manual_entry` 초안을 저장할 수 있다.
+이 경우 좌표는 `null`이며 위치를 확인하기 전까지 경로 안내에 사용하지 않는다.
 
 ## 접근 권한
 

@@ -142,6 +142,42 @@ void main() {
     expect(requests.single.url.queryParameters['id'], 'eq.item-1');
     expect(jsonDecode(requests.single.body)['progress_status'], 'skipped');
   });
+  test('draft place and itinerary are created through one RPC', () async {
+    response = {
+      'id': 'item-1',
+      'trip_id': 'trip-1',
+      'place_id': 'place-1',
+      'scheduled_date': '2026-10-11',
+      'position': 0,
+    };
+    final created = await backend.itinerary.addDraftPlace(
+      'trip-1',
+      '2026-10-11',
+      ' 경복궁 ',
+      notes: ' 오전 방문 ',
+    );
+    expect(created['place_id'], 'place-1');
+    expect(requests, hasLength(1));
+    expect(requests.single.url.path, '/rest/v1/rpc/add_draft_itinerary_item');
+    final body = jsonDecode(requests.single.body) as Map;
+    expect(body['p_trip_id'], 'trip-1');
+    expect(body['p_display_name'], '경복궁');
+    expect(body['p_notes'], '오전 방문');
+  });
+  test('empty draft place name is rejected before request', () async {
+    expect(
+      () => backend.itinerary.addDraftPlace('trip-1', '2026-10-11', '  '),
+      throwsA(isA<RepositoryException>()),
+    );
+    expect(requests, isEmpty);
+  });
+  test('invalid draft itinerary date is rejected before request', () async {
+    expect(
+      () => backend.itinerary.addDraftPlace('trip-1', '2026-02-30', '경복궁'),
+      throwsA(isA<RepositoryException>()),
+    );
+    expect(requests, isEmpty);
+  });
   test('caller cannot rewrite row ownership', () async {
     await expectLater(
       backend.places.create('trip-1', {'created_by': 'other'}),

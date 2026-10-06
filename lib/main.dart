@@ -3,6 +3,7 @@ import 'ui/gallery/screen_flow_board.dart';
 import 'backend/backend.dart';
 import 'auth/auth_gate.dart';
 import 'auth/auth_screen.dart';
+import 'trips/trip_workspace_screen.dart';
 
 part 'ui/shared/colors.dart';
 part 'ui/gallery/design_gallery.dart';
@@ -63,7 +64,8 @@ class TripProjectApp extends StatelessWidget {
           : AuthGate(
               backend: backend,
               authenticatedBuilder: (context, session, signOut) =>
-                  TravelAppShell(
+                  TripWorkspaceScreen(
+                    backend: backend,
                     accountEmail: session.user.email?.isNotEmpty == true
                         ? session.user.email
                         : 'NextMate traveler',

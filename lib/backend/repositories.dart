@@ -308,6 +308,38 @@ class TripRowsRepository extends Repository {
 class ItineraryRepository extends TripRowsRepository {
   ItineraryRepository(SupabaseClient client)
     : super(client, 'itinerary_items', stampCreator: true);
+
+  /// Atomically creates a name-only place and schedules it for a trip day.
+  Future<Json> addDraftPlace(
+    String tripId,
+    String date,
+    String name, {
+    String? notes,
+  }) {
+    userId;
+    final parsedDate = DateTime.tryParse(date);
+    if (parsedDate == null ||
+        !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date) ||
+        parsedDate.toIso8601String().substring(0, 10) != date ||
+        name.trim().isEmpty ||
+        name.trim().length > 120) {
+      throw const RepositoryException(FailureKind.invalid);
+    }
+    return request(
+      () async =>
+          await client.rpc(
+                'add_draft_itinerary_item',
+                params: {
+                  'p_trip_id': tripId,
+                  'p_scheduled_date': date,
+                  'p_display_name': name.trim(),
+                  'p_notes': notes?.trim(),
+                },
+              )
+              as Json,
+    );
+  }
+
   Future<List<Json>> day(String tripId, String date) {
     userId;
     return request(
