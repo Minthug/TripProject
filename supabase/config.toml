@@ -4,6 +4,10 @@
 # working directory name when running `supabase init`.
 project_id = "nextmate"
 
+[functions.tourism-search]
+# Authentication is checked by createSupabaseContext so CORS preflight can pass.
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

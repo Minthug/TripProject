@@ -77,7 +77,7 @@ The flow board can also be opened directly with `/?view=flow`.
 ## Product decisions
 
 - **Launch area:** travel within South Korea
-- **Place information:** domestic place API (to be connected), with tourism data as enrichment
+- **Place information:** TourAPI English/Japanese search and schedule saving (deployment pending)
 - **Routes:** domestic transit, walking, and road APIs (to be connected)
 - **Mobile framework:** Flutter
 - **Backend platform:** Supabase
@@ -90,3 +90,5 @@ The backend structure, initial tables, and access model are documented in
 [`docs/backend-architecture.md`](docs/backend-architecture.md).
 Google·Apple OAuth and session routing setup is documented in
 [`docs/auth-setup.md`](docs/auth-setup.md).
+TourAPI secret and deployment setup is documented in
+[`docs/tourism-api.md`](docs/tourism-api.md).

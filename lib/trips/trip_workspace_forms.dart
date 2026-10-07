@@ -151,7 +151,7 @@ class _DraftPlaceDialogState extends State<_DraftPlaceDialog> {
             decoration: const InputDecoration(labelText: '메모 (선택)'),
           ),
           const SizedBox(height: 8),
-          const Text('위치 정보는 장소 API 연결 후 확인할 수 있어요.'),
+          const Text('직접 입력한 장소는 위치 정보가 없어 경로 안내에 사용할 수 없어요.'),
         ],
       ),
     ),
@@ -170,6 +170,134 @@ class _DraftPlaceDialogState extends State<_DraftPlaceDialog> {
           }
         },
         child: const Text('일정에 추가'),
+      ),
+    ],
+  );
+}
+
+class _TourPlaceSearchDialog extends StatefulWidget {
+  const _TourPlaceSearchDialog({required this.tourism});
+  final TourismRepository tourism;
+
+  @override
+  State<_TourPlaceSearchDialog> createState() => _TourPlaceSearchDialogState();
+}
+
+class _TourPlaceSearchDialogState extends State<_TourPlaceSearchDialog> {
+  final _keyword = TextEditingController();
+  String _language = 'en';
+  List<TourPlace> _results = [];
+  String? _message;
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _keyword.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    if (_searching) return;
+    if (_keyword.text.trim().length < 2) {
+      setState(() => _message = '검색어를 두 글자 이상 입력해 주세요.');
+      return;
+    }
+    setState(() {
+      _searching = true;
+      _message = null;
+      _results = [];
+    });
+    try {
+      final found = await widget.tourism.search(
+        _keyword.text,
+        language: _language,
+      );
+      if (!mounted) return;
+      setState(() {
+        _results = found;
+        _message = found.isEmpty ? '검색 결과가 없어요. 다른 이름으로 검색해 보세요.' : null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _message = '관광정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('공식 관광지 검색'),
+    content: SizedBox(
+      width: 500,
+      height: 430,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              DropdownButton<String>(
+                value: _language,
+                items: const [
+                  DropdownMenuItem(value: 'en', child: Text('English')),
+                  DropdownMenuItem(value: 'ja', child: Text('日本語')),
+                ],
+                onChanged: _searching
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _language = value;
+                          _results = [];
+                          _message = null;
+                        });
+                      },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _keyword,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _search(),
+                  decoration: const InputDecoration(
+                    labelText: '관광지 이름',
+                    hintText: 'Gyeongbokgung Palace',
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '검색',
+                onPressed: _searching ? null : _search,
+                icon: const Icon(Icons.search_rounded),
+              ),
+            ],
+          ),
+          if (_searching) const LinearProgressIndicator(),
+          if (_message != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(_message!),
+            ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _results.length,
+              itemBuilder: (context, index) {
+                final place = _results[index];
+                return ListTile(
+                  title: Text(place.name),
+                  subtitle: Text(place.address),
+                  onTap: () => Navigator.pop(context, place),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('취소'),
       ),
     ],
   );

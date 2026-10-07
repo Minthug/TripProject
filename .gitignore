@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 /coverage/
 /config/*.local.json
+/supabase/functions/.env
 
 # Symbolication related
 app.*.symbols

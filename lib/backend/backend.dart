@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import 'repositories.dart';
 import 'auth_redirect.dart';
+import 'tourism_repository.dart';
 
 class BackendScope extends InheritedWidget {
   final NextMateBackend? backend;
@@ -51,6 +52,7 @@ class NextMateBackend {
   late final stays = TripRowsRepository(client, 'stays');
   late final places = TripRowsRepository(client, 'places', stampCreator: true);
   late final itinerary = ItineraryRepository(client);
+  final TourismRepository tourism;
   late final reservations = TripRowsRepository(
     client,
     'reservations',
@@ -75,7 +77,8 @@ class NextMateBackend {
   late final members = MemberRepository(client);
   late final notifications = NotificationRepository(client);
 
-  NextMateBackend(this.client);
+  NextMateBackend(this.client, {TourismRepository? tourismRepository})
+    : tourism = tourismRepository ?? TourismRepository(client);
 
   static Future<NextMateBackend?> initialize({
     BackendConfig config = BackendConfig.environment,

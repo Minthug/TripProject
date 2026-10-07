@@ -124,6 +124,67 @@ void main() {
     );
     expect(requests, isEmpty);
   });
+  test('tourism search calls the Edge Function without an API key', () async {
+    response = {
+      'places': [
+        {
+          'contentId': '123456',
+          'language': 'ja',
+          'name': '景福宮',
+          'address': 'ソウル特別市',
+          'latitude': 37.579617,
+          'longitude': 126.977041,
+        },
+      ],
+    };
+    final places = await backend.tourism.search('景福宮', language: 'ja');
+    expect(places.single.name, '景福宮');
+    expect(requests.single.url.path, '/functions/v1/tourism-search');
+    final body = jsonDecode(requests.single.body) as Map;
+    expect(body, {'keyword': '景福宮', 'language': 'ja'});
+    expect(requests.single.body, isNot(contains('serviceKey')));
+  });
+  test('tourism search validates language before any network call', () async {
+    await expectLater(
+      backend.tourism.search('Palace', language: 'ko'),
+      throwsA(isA<RepositoryException>()),
+    );
+    expect(requests, isEmpty);
+  });
+  test('selected TourAPI place is saved through one itinerary RPC', () async {
+    response = {'id': 'item-1', 'place_id': 'place-1'};
+    await backend.itinerary.addTourPlace(
+      'trip-1',
+      '2026-10-11',
+      contentId: '123456',
+      language: 'en',
+      name: 'Gyeongbokgung Palace',
+      address: '161 Sajik-ro, Seoul',
+      latitude: 37.579617,
+      longitude: 126.977041,
+    );
+    expect(requests.single.url.path, '/rest/v1/rpc/add_tour_itinerary_item');
+    final body = jsonDecode(requests.single.body) as Map;
+    expect(body['p_content_id'], '123456');
+    expect(body['p_language'], 'en');
+    expect(body['p_latitude'], 37.579617);
+  });
+  test('invalid TourAPI coordinates do not reach database', () async {
+    expect(
+      () => backend.itinerary.addTourPlace(
+        'trip-1',
+        '2026-10-11',
+        contentId: '123456',
+        language: 'en',
+        name: 'Bad Place',
+        address: 'Seoul',
+        latitude: double.nan,
+        longitude: 126.0,
+      ),
+      throwsA(isA<RepositoryException>()),
+    );
+    expect(requests, isEmpty);
+  });
   test('unauthenticated reads fail without issuing a query', () async {
     final anonymous = SupabaseClient(
       'https://example.supabase.co',

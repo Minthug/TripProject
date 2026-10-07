@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../backend/backend.dart';
 import '../backend/repositories.dart';
+import '../backend/tourism_repository.dart';
 
 part 'trip_workspace_forms.dart';
 
@@ -194,6 +195,32 @@ class _TripWorkspaceScreenState extends State<TripWorkspaceScreen> {
         day,
         draft.name,
         notes: draft.notes,
+      ),
+      selectTripId: trip.id,
+      selectDay: day,
+    );
+  }
+
+  Future<void> _addTourPlace() async {
+    final trip = _trip;
+    final day = _day;
+    if (trip == null || day == null) return;
+    final place = await showDialog<TourPlace>(
+      context: context,
+      builder: (context) =>
+          _TourPlaceSearchDialog(tourism: widget.backend.tourism),
+    );
+    if (place == null) return;
+    await _perform(
+      () async => widget.backend.itinerary.addTourPlace(
+        trip.id,
+        day,
+        contentId: place.contentId,
+        language: place.language,
+        name: place.name,
+        address: place.address,
+        latitude: place.latitude,
+        longitude: place.longitude,
       ),
       selectTripId: trip.id,
       selectDay: day,
@@ -413,10 +440,14 @@ class _TripWorkspaceScreenState extends State<TripWorkspaceScreen> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  FilledButton.icon(
+                  TextButton(
                     onPressed: _busy ? null : _addPlace,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('장소 추가'),
+                    child: const Text('직접 입력'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: _busy ? null : _addTourPlace,
+                    icon: const Icon(Icons.search_rounded),
+                    label: const Text('관광지 검색'),
                   ),
                 ],
               ),
@@ -425,13 +456,13 @@ class _TripWorkspaceScreenState extends State<TripWorkspaceScreen> {
                 const Card(
                   child: Padding(
                     padding: EdgeInsets.all(20),
-                    child: Text('이 날짜의 방문 장소가 없어요. 장소명을 입력해 일정을 시작하세요.'),
+                    child: Text('이 날짜의 방문 장소가 없어요. 관광지를 검색하거나 직접 입력해 주세요.'),
                   ),
                 ),
               for (final item in _items) _itemCard(item),
               const SizedBox(height: 10),
               const Text(
-                '장소 위치·영업시간과 경로는 외부 데이터 연동 후 표시됩니다. 위치가 없는 초안은 경로 안내에 사용하지 않습니다.',
+                '공식 관광정보의 위치는 저장됩니다. 영업시간·경로는 아직 연결되지 않았으며, 직접 입력한 위치 미등록 장소는 경로에 사용하지 않습니다.',
                 style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
@@ -458,6 +489,8 @@ class _TripWorkspaceScreenState extends State<TripWorkspaceScreen> {
             }),
             if ((item['notes'] as String?)?.isNotEmpty == true)
               Text(item['notes'] as String),
+            if (place?['location_source'] == 'tour_api')
+              Text(place?['formatted_address'] as String? ?? ''),
             if (place?['latitude'] == null) const Text('위치 미등록 · 경로 안내 불가'),
           ],
         ),

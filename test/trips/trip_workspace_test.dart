@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trip_project/backend/backend.dart';
+import 'package:trip_project/backend/tourism_repository.dart';
 import 'package:trip_project/trips/trip_workspace_screen.dart';
 
 void main() {
@@ -44,6 +45,27 @@ void main() {
           body = places;
         } else if (path.endsWith('/itinerary_items')) {
           body = items;
+        } else if (path.endsWith('/rpc/add_tour_itinerary_item')) {
+          final input = jsonDecode(request.body) as Map<String, dynamic>;
+          places.add({
+            'id': 'place-2',
+            'trip_id': 'trip-1',
+            'display_name': input['p_display_name'],
+            'formatted_address': input['p_address'],
+            'latitude': input['p_latitude'],
+            'longitude': input['p_longitude'],
+            'location_source': 'tour_api',
+          });
+          final item = {
+            'id': 'item-2',
+            'trip_id': 'trip-1',
+            'place_id': 'place-2',
+            'scheduled_date': input['p_scheduled_date'],
+            'position': 1,
+            'progress_status': 'planned',
+          };
+          items.add(item);
+          body = item;
         } else if (path.endsWith('/rpc/add_draft_itinerary_item')) {
           final input = jsonDecode(request.body) as Map<String, dynamic>;
           places.add({
@@ -92,7 +114,14 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: TripWorkspaceScreen(backend: NextMateBackend(client))),
+      MaterialApp(
+        home: TripWorkspaceScreen(
+          backend: NextMateBackend(
+            client,
+            tourismRepository: _FakeTourismRepository(client),
+          ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.text('아직 저장한 여행이 없어요.'), findsOneWidget);
@@ -105,7 +134,7 @@ void main() {
     expect(trips, hasLength(1));
     expect(find.text('서울 주말 여행'), findsOneWidget);
 
-    await tester.tap(find.text('장소 추가'));
+    await tester.tap(find.text('직접 입력'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, '경복궁');
     await tester.tap(find.text('일정에 추가'));
@@ -113,6 +142,36 @@ void main() {
     expect(items, hasLength(1));
     expect(find.text('경복궁'), findsOneWidget);
     expect(find.text('위치 미등록 · 경로 안내 불가'), findsOneWidget);
+
+    await tester.tap(find.text('관광지 검색'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Gyeongbokgung');
+    await tester.tap(find.byTooltip('검색'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(ListTile, 'Gyeongbokgung Palace'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ListTile, 'Gyeongbokgung Palace'));
+    await tester.pumpAndSettle();
+    expect(items, hasLength(2));
+    expect(find.text('161 Sajik-ro, Seoul'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+}
+
+class _FakeTourismRepository extends TourismRepository {
+  _FakeTourismRepository(super.client);
+
+  @override
+  Future<List<TourPlace>> search(
+    String keyword, {
+    String language = 'en',
+  }) async => [
+    const TourPlace(
+      contentId: '123456',
+      language: 'en',
+      name: 'Gyeongbokgung Palace',
+      address: '161 Sajik-ro, Seoul',
+      latitude: 37.579617,
+      longitude: 126.977041,
+    ),
+  ];
 }

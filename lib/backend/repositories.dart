@@ -340,6 +340,54 @@ class ItineraryRepository extends TripRowsRepository {
     );
   }
 
+  /// Atomically schedules an official TourAPI search result.
+  Future<Json> addTourPlace(
+    String tripId,
+    String date, {
+    required String contentId,
+    required String language,
+    required String name,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) {
+    userId;
+    final parsedDate = DateTime.tryParse(date);
+    if (parsedDate == null ||
+        !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date) ||
+        parsedDate.toIso8601String().substring(0, 10) != date ||
+        !RegExp(r'^\d{1,30}$').hasMatch(contentId) ||
+        !{'en', 'ja'}.contains(language) ||
+        name.trim().isEmpty ||
+        name.trim().length > 120 ||
+        address.trim().isEmpty ||
+        !latitude.isFinite ||
+        latitude < -90 ||
+        latitude > 90 ||
+        !longitude.isFinite ||
+        longitude < -180 ||
+        longitude > 180) {
+      throw const RepositoryException(FailureKind.invalid);
+    }
+    return request(
+      () async =>
+          await client.rpc(
+                'add_tour_itinerary_item',
+                params: {
+                  'p_trip_id': tripId,
+                  'p_scheduled_date': date,
+                  'p_content_id': contentId,
+                  'p_language': language,
+                  'p_display_name': name.trim(),
+                  'p_address': address.trim(),
+                  'p_latitude': latitude,
+                  'p_longitude': longitude,
+                },
+              )
+              as Json,
+    );
+  }
+
   Future<List<Json>> day(String tripId, String date) {
     userId;
     return request(
