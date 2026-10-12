@@ -413,26 +413,27 @@ class _OverviewDayCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.hotel_rounded,
-                              size: 12,
-                              color: AppColors.green,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                day.stay,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.muted,
+                        if (day.stay.isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.hotel_rounded,
+                                size: 12,
+                                color: AppColors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  day.stay,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.muted,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -465,14 +466,16 @@ class _OverviewDayCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: 4),
-              _OverviewNotice(
-                icon: day.moveDay
-                    ? Icons.luggage_rounded
-                    : Icons.free_breakfast_outlined,
-                text: day.openTime,
-                moveDay: day.moveDay,
-              ),
+              if (day.openTime.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                _OverviewNotice(
+                  icon: day.moveDay
+                      ? Icons.luggage_rounded
+                      : Icons.free_breakfast_outlined,
+                  text: day.openTime,
+                  moveDay: day.moveDay,
+                ),
+              ],
               if (hasIssue) ...[
                 const SizedBox(height: 6),
                 _OverviewNotice(

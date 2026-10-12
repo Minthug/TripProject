@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 
 import 'repositories.dart';
 import 'auth_redirect.dart';
@@ -30,7 +31,10 @@ class BackendConfig {
 
   void validate() {
     final uri = Uri.tryParse(url);
-    final local = uri?.host == 'localhost' || uri?.host == '127.0.0.1';
+    final local =
+        uri?.host == 'localhost' ||
+        uri?.host == '127.0.0.1' ||
+        (kDebugMode && uri?.host == '10.0.2.2');
     if (uri == null ||
         uri.host.isEmpty ||
         (uri.scheme != 'https' && !(local && uri.scheme == 'http')) ||

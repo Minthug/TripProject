@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(20);
+select plan(21);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_preferences', 'user_preferences table exists');
@@ -101,6 +101,16 @@ select is(
   (select count(*) from public.trips where id = '20000000-0000-0000-0000-000000000001'),
   1::bigint,
   'the owner can read the trip'
+);
+
+select lives_ok(
+  $$insert into public.trips (
+    owner_id, title, destination_name, start_date, end_date, time_zone_id
+  ) values (
+    '10000000-0000-0000-0000-000000000001',
+    'Returned trip', 'Seoul', '2026-10-06', '2026-10-07', 'Asia/Seoul'
+  ) returning id$$,
+  'the owner can create a trip and receive the inserted row'
 );
 
 reset role;

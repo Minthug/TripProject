@@ -4,11 +4,13 @@ class TravelAppShell extends StatefulWidget {
   const TravelAppShell({
     super.key,
     this.initialIndex = 0,
+    this.backend,
     this.accountEmail,
     this.onSignOut,
   });
 
   final int initialIndex;
+  final NextMateBackend? backend;
   final String? accountEmail;
   final Future<void> Function()? onSignOut;
 
@@ -28,6 +30,13 @@ class _TravelAppShellState extends State<TravelAppShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.backend case final backend?) {
+      return _LiveTravelShell(
+        backend: backend,
+        accountEmail: widget.accountEmail,
+        onSignOut: widget.onSignOut,
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: IndexedStack(

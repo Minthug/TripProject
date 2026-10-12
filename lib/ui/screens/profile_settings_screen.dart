@@ -41,12 +41,16 @@ class ProfileSettingsScreen extends StatefulWidget {
     super.key,
     this.initialPreferences = const TravelPreferences(),
     this.onSaved,
+    this.onSaveAsync,
+    this.liveMode = false,
     this.accountEmail,
     this.onSignOut,
   });
 
   final TravelPreferences initialPreferences;
   final ValueChanged<TravelPreferences>? onSaved;
+  final Future<void> Function(TravelPreferences)? onSaveAsync;
+  final bool liveMode;
   final String? accountEmail;
   final Future<void> Function()? onSignOut;
 
@@ -74,20 +78,51 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     defaultMode = initial.defaultMode;
   }
 
-  void _saveSettings() {
-    widget.onSaved?.call(
-      TravelPreferences(
-        userLanguage: userLanguage,
-        destinationLanguage: destinationLanguage,
-        locationAllowed: locationAllowed,
-        uberInstalled: uberInstalled,
-        defaultMode: defaultMode,
-      ),
+  @override
+  void didUpdateWidget(covariant ProfileSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialPreferences != widget.initialPreferences) {
+      final current = widget.initialPreferences;
+      userLanguage = current.userLanguage;
+      destinationLanguage = current.destinationLanguage;
+      locationAllowed = current.locationAllowed;
+      uberInstalled = current.uberInstalled;
+      defaultMode = current.defaultMode;
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    final value = TravelPreferences(
+      userLanguage: userLanguage,
+      destinationLanguage: destinationLanguage,
+      locationAllowed: locationAllowed,
+      uberInstalled: uberInstalled,
+      defaultMode: defaultMode,
     );
-    _showPrototypeMessage(context, message: '사용자 설정이 여행 UI에 반영되었습니다.');
+    try {
+      if (widget.onSaveAsync case final save?) {
+        await save(value);
+      } else {
+        widget.onSaved?.call(value);
+      }
+      if (mounted) {
+        _showPrototypeMessage(
+          context,
+          message: widget.liveMode
+              ? '언어와 기본 이동수단을 저장했어요.'
+              : '사용자 설정이 여행 UI에 반영되었습니다.',
+        );
+      }
+    } catch (_) {
+      if (mounted) _showPrototypeMessage(context, message: '설정을 저장하지 못했어요.');
+    }
   }
 
   Future<void> _checkUberStatus() async {
+    if (widget.liveMode) {
+      _showPrototypeMessage(context, message: 'Uber 설치 여부 자동 확인은 아직 연결 전이에요.');
+      return;
+    }
     setState(() => uberChecking = true);
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
@@ -225,8 +260,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     children: [
                       _PermissionTile(
                         allowed: locationAllowed,
-                        onChanged: (value) =>
-                            setState(() => locationAllowed = value),
+                        onChanged: widget.liveMode
+                            ? null
+                            : (value) =>
+                                  setState(() => locationAllowed = value),
                       ),
                       const Divider(height: 1, color: AppColors.line),
                       _UberInstallTile(
@@ -236,7 +273,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         onCheck: _checkUberStatus,
                         onInstall: () => _showPrototypeMessage(
                           context,
-                          message: 'Uber 앱스토어 페이지를 열 준비가 되었습니다.',
+                          message: widget.liveMode
+                              ? 'Uber 설치 안내는 아직 연결 전이에요.'
+                              : 'Uber 앱스토어 페이지를 열 준비가 되었습니다.',
                         ),
                       ),
                     ],
@@ -323,6 +362,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  if (widget.liveMode) ...[
+                    const Text(
+                      '위치 권한과 Uber 설치 상태는 실제 기기 확인 기능이 연결되면 변경할 수 있어요.',
+                      style: TextStyle(fontSize: 11, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (widget.onSignOut != null) ...[
                     OutlinedButton.icon(
                       onPressed: widget.onSignOut,
@@ -438,7 +484,7 @@ class _PermissionTile extends StatelessWidget {
   const _PermissionTile({required this.allowed, required this.onChanged});
 
   final bool allowed;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

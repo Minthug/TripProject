@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'ui/gallery/screen_flow_board.dart';
 import 'backend/backend.dart';
+import 'backend/repositories.dart';
+import 'backend/tourism_repository.dart';
 import 'auth/auth_gate.dart';
 import 'auth/auth_screen.dart';
-import 'trips/trip_workspace_screen.dart';
+import 'ui/live_trip_data.dart';
 
 part 'ui/shared/colors.dart';
 part 'ui/gallery/design_gallery.dart';
@@ -24,6 +26,7 @@ part 'ui/screens/profile_settings_screen.dart';
 part 'ui/screens/recovery_states_screen.dart';
 part 'ui/screens/onboarding_screen.dart';
 part 'ui/screens/travel_shell.dart';
+part 'ui/screens/live_travel.dart';
 part 'ui/screens/next_move_home.dart';
 part 'ui/screens/timeline_home.dart';
 part 'ui/screens/map_first_home.dart';
@@ -64,7 +67,7 @@ class TripProjectApp extends StatelessWidget {
           : AuthGate(
               backend: backend,
               authenticatedBuilder: (context, session, signOut) =>
-                  TripWorkspaceScreen(
+                  TravelAppShell(
                     backend: backend,
                     accountEmail: session.user.email?.isNotEmpty == true
                         ? session.user.email

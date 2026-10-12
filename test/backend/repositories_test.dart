@@ -83,6 +83,10 @@ void main() {
       'http://127.0.0.1:54321',
       'sb_publishable_local',
     ).validate();
+    const BackendConfig(
+      'http://10.0.2.2:54321',
+      'sb_publishable_local',
+    ).validate();
   });
   test(
     'trip creation binds owner to session and sends date-only values',
@@ -202,6 +206,14 @@ void main() {
     expect(requests.single.url.queryParameters['trip_id'], 'eq.trip-1');
     expect(requests.single.url.queryParameters['id'], 'eq.item-1');
     expect(jsonDecode(requests.single.body)['progress_status'], 'skipped');
+  });
+  test('daily itinerary is requested in visit order', () async {
+    response = <Map<String, dynamic>>[];
+    await backend.itinerary.day('trip-1', '2026-10-11');
+    expect(
+      requests.single.url.queryParameters['order'],
+      'position.asc.nullslast',
+    );
   });
   test('draft place and itinerary are created through one RPC', () async {
     response = {

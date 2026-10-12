@@ -396,7 +396,7 @@ class ItineraryRepository extends TripRowsRepository {
           .select()
           .eq('trip_id', tripId)
           .eq('scheduled_date', date)
-          .order('position'),
+          .order('position', ascending: true),
     );
   }
 
