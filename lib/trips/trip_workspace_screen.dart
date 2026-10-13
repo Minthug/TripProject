@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../backend/backend.dart';
 import '../backend/repositories.dart';
 import '../backend/tourism_repository.dart';
+import '../ui/tourism_autocomplete.dart';
 
 part 'trip_workspace_forms.dart';
 

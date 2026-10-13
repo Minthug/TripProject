@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'ui/gallery/screen_flow_board.dart';
 import 'backend/backend.dart';
 import 'backend/repositories.dart';
@@ -6,6 +8,9 @@ import 'backend/tourism_repository.dart';
 import 'auth/auth_gate.dart';
 import 'auth/auth_screen.dart';
 import 'ui/live_trip_data.dart';
+import 'ui/tour_map.dart';
+import 'ui/tourism_autocomplete.dart';
+import 'ui/route_links.dart';
 
 part 'ui/shared/colors.dart';
 part 'ui/gallery/design_gallery.dart';
@@ -21,6 +26,7 @@ part 'ui/screens/transit_guide_screen.dart';
 part 'ui/screens/driver_card_screen.dart';
 part 'ui/screens/uber_handoff_screen.dart';
 part 'ui/screens/route_comparison_screen.dart';
+part 'ui/screens/live_route_comparison_screen.dart';
 part 'ui/screens/departure_alert_screen.dart';
 part 'ui/screens/profile_settings_screen.dart';
 part 'ui/screens/recovery_states_screen.dart';
@@ -36,6 +42,7 @@ part 'ui/shared/preview_constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeTourMap();
   final backend = await NextMateBackend.initialize();
   runApp(BackendScope(backend: backend, child: const TripProjectApp()));
 }

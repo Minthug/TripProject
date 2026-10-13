@@ -21,6 +21,7 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
   late Future<LiveTripData?> _tripFuture;
   String? _selectedTripId;
   int _tab = 0;
+  bool _advancingPlace = false;
   TravelPreferences _preferences = const TravelPreferences();
   bool _preferencesReady = false;
   bool _preferencesFailed = false;
@@ -28,8 +29,31 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
   @override
   void initState() {
     super.initState();
-    _tripFuture = LiveTripData.load(widget.backend);
+    _tripFuture = _loadInitialTrip();
     _loadPreferences();
+  }
+
+  String get _tripSelectionKey =>
+      'selected_trip_${widget.backend.client.auth.currentUser?.id ?? 'unknown'}';
+
+  Future<LiveTripData?> _loadInitialTrip() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      _selectedTripId = preferences.getString(_tripSelectionKey);
+    } catch (_) {
+      // Trip loading still works when local preference storage is unavailable.
+    }
+    return LiveTripData.load(widget.backend, selectedTripId: _selectedTripId);
+  }
+
+  Future<void> _rememberTrip(String id) async {
+    _selectedTripId = id;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_tripSelectionKey, id);
+    } catch (_) {
+      // Keep the current selection for this session even if storage fails.
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -101,13 +125,112 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
       widget.backend,
       selectedTripId: _selectedTripId,
     );
-    setState(() => _tripFuture = next);
+    setState(() {
+      _tripFuture = next;
+    });
     await next;
   }
 
   Future<void> _selectTrip(String id) async {
-    _selectedTripId = id;
+    await _rememberTrip(id);
     await _refresh();
+  }
+
+  Future<void> _compareCurrentPlace(Json item) async {
+    final trip = await _tripFuture;
+    if (trip == null || !mounted) return;
+    final items = trip.itemsFor(trip.currentDay);
+    final index = items.indexWhere((row) => row['id'] == item['id']);
+    Json? originPlace;
+    for (var position = index - 1; position >= 0; position--) {
+      if (items[position]['progress_status'] == 'completed') {
+        originPlace = trip.places[items[position]['place_id']];
+        break;
+      }
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LiveRouteComparisonScreen(
+          backend: widget.backend,
+          data: trip,
+          destinationItem: item,
+          originPlace: originPlace,
+          uberInstalled: _preferences.uberInstalled,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _advancePlace(Json item, String status) async {
+    if (_advancingPlace) return;
+    final itemId = item['id'] as String;
+    final previousStatus = item['progress_status'] as String? ?? 'planned';
+    setState(() => _advancingPlace = true);
+    try {
+      final trip = await _tripFuture;
+      if (trip == null || !mounted) return;
+      await widget.backend.itinerary.update(trip.trip.id, itemId, {
+        'progress_status': status,
+      });
+      await _refresh();
+      if (!mounted) return;
+      Future<bool> undoAdvance() async {
+        try {
+          await widget.backend.itinerary.update(trip.trip.id, itemId, {
+            'progress_status': previousStatus,
+          });
+          if (mounted) await _refresh();
+          return true;
+        } catch (_) {
+          if (mounted) _liveNotice(context, '방문 상태를 되돌리지 못했어요.');
+          return false;
+        }
+      }
+
+      final currentDayItems = trip.itemsFor(trip.currentDay);
+      final currentIndex = currentDayItems.indexWhere(
+        (row) => row['id'] == itemId,
+      );
+      final nextItem = currentDayItems
+          .skip(currentIndex + 1)
+          .where(
+            (row) =>
+                row['progress_status'] != 'completed' &&
+                row['progress_status'] != 'skipped',
+          )
+          .firstOrNull;
+      if (nextItem != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => LiveRouteComparisonScreen(
+              backend: widget.backend,
+              data: trip,
+              destinationItem: nextItem,
+              originPlace: status == 'completed'
+                  ? trip.places[item['place_id']]
+                  : null,
+              uberInstalled: _preferences.uberInstalled,
+              onUndo: undoAdvance,
+            ),
+          ),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              status == 'completed' ? '방문 완료 · 다음 장소로 이동했어요.' : '이 장소를 건너뛰었어요.',
+            ),
+            action: SnackBarAction(label: '되돌리기', onPressed: undoAdvance),
+          ),
+        );
+    } catch (_) {
+      if (mounted) _liveNotice(context, '다음 장소로 이동하지 못했어요. 다시 시도해 주세요.');
+    } finally {
+      if (mounted) setState(() => _advancingPlace = false);
+    }
   }
 
   Future<void> _editTrip([Trip? existing]) async {
@@ -119,7 +242,7 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
     try {
       if (existing == null) {
         final created = await widget.backend.trips.create(input);
-        _selectedTripId = created.id;
+        await _rememberTrip(created.id);
       } else {
         await widget.backend.trips.update(existing.id, input);
       }
@@ -170,14 +293,19 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
         body: IndexedStack(
           index: _tab,
           children: [
-            _LiveToday(
-              data: data,
+            NextMoveHome(
+              liveData: data,
+              preferences: _preferences,
+              onAdvancePlace: _advancePlace,
+              onComparePlace: _compareCurrentPlace,
+              advancingPlace: _advancingPlace,
               onViewTrip: () => setState(() => _tab = 1),
               onOpenProfile: () => setState(() => _tab = 3),
               onRefresh: _refresh,
             ),
-            _LiveTripOverview(
-              data: data,
+            TripOverviewScreen(
+              showBack: false,
+              liveData: data,
               backend: widget.backend,
               onRefresh: _refresh,
               onNewTrip: _editTrip,
@@ -188,6 +316,7 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
               backend: widget.backend,
               data: data,
               onRefresh: _refresh,
+              onDone: () => setState(() => _tab = 1),
             ),
             !_preferencesReady
                 ? const Center(child: CircularProgressIndicator())
@@ -213,19 +342,47 @@ class _LiveTravelShellState extends State<_LiveTravelShell> {
           onDestinationSelected: (index) => setState(() => _tab = index),
           backgroundColor: Colors.white,
           indicatorColor: AppColors.paleGreen,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), label: '오늘'),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              label: '일정',
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: _travelCopy(
+                _preferences.userLanguage,
+                english: 'Today',
+                korean: '오늘',
+                japanese: '今日',
+              ),
             ),
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              label: '장소',
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month_rounded),
+              label: _travelCopy(
+                _preferences.userLanguage,
+                english: 'Trip',
+                korean: '일정',
+                japanese: '旅程',
+              ),
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              label: '프로필',
+              icon: const Icon(Icons.explore_outlined),
+              selectedIcon: const Icon(Icons.explore_rounded),
+              label: _travelCopy(
+                _preferences.userLanguage,
+                english: 'Explore',
+                korean: '장소',
+                japanese: '探索',
+              ),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: _travelCopy(
+                _preferences.userLanguage,
+                english: 'Profile',
+                korean: '프로필',
+                japanese: '設定',
+              ),
             ),
           ],
         ),
@@ -267,295 +424,30 @@ class _LiveMessage extends StatelessWidget {
   );
 }
 
-class _LiveToday extends StatelessWidget {
-  const _LiveToday({
-    required this.data,
-    required this.onViewTrip,
-    required this.onOpenProfile,
-    required this.onRefresh,
-  });
-  final LiveTripData data;
-  final VoidCallback onViewTrip;
-  final VoidCallback onOpenProfile;
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    final day = data.currentDay;
-    final today = _liveDate(DateTime.now());
-    final beforeTrip = today.compareTo(data.trip.startDate) < 0;
-    final afterTrip = today.compareTo(data.trip.endDate) > 0;
-    final dayLabel = beforeTrip
-        ? '여행 시작 전'
-        : afterTrip
-        ? '지난 여행'
-        : '${data.days.indexOf(day) + 1}일차';
-    final sectionLabel = beforeTrip
-        ? '첫날 일정'
-        : afterTrip
-        ? '마지막 날 일정'
-        : '오늘 일정';
-    final items = data.itemsFor(day);
-    final upcoming = afterTrip
-        ? items.lastOrNull
-        : items
-              .where(
-                (item) =>
-                    item['progress_status'] != 'completed' &&
-                    item['progress_status'] != 'skipped',
-              )
-              .firstOrNull;
-    return _PhonePage(
-      child: RefreshIndicator(
-        onRefresh: onRefresh,
-        child: ListView(
-          children: [
-            _AppHeader(
-              title: '${data.trip.destinationName} · $dayLabel',
-              subtitle: '${data.trip.title} · $day',
-              onProfileTap: onOpenProfile,
-            ),
-            const SizedBox(height: 22),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.deepGreen,
-                borderRadius: BorderRadius.circular(26),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    afterTrip
-                        ? '마지막 일정'
-                        : beforeTrip
-                        ? '첫날 방문 장소'
-                        : '다음 장소',
-                    style: const TextStyle(
-                      color: Color(0xFFAED8C4),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    upcoming == null ? '예정된 장소가 없어요' : data.placeName(upcoming),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 27,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (upcoming?['notes'] case final String notes) ...[
-                    const SizedBox(height: 5),
-                    Text(
-                      notes,
-                      style: const TextStyle(color: Color(0xFFC7D8D0)),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  const Text(
-                    '실시간 위치·이동 경로는 아직 연결되지 않았어요.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 14),
-                  _PrimaryAction(
-                    label: '전체 일정 보기',
-                    icon: Icons.calendar_month_rounded,
-                    background: const Color(0xFFF7F0D5),
-                    foreground: AppColors.ink,
-                    onTap: onViewTrip,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(child: Text(sectionLabel, style: _sectionTitle)),
-                TextButton(onPressed: onViewTrip, child: const Text('전체 일정')),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (items.isEmpty) const Text('이 날짜에 등록된 방문 장소가 없어요.'),
-            for (final item in items)
-              Card(
-                color: Colors.white,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text('${(item['position'] as int) + 1}'),
-                  ),
-                  title: Text(data.placeName(item)),
-                  subtitle: Text(item['notes'] as String? ?? '방문 예정'),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LiveTripOverview extends StatelessWidget {
-  const _LiveTripOverview({
-    required this.data,
-    required this.backend,
-    required this.onRefresh,
-    required this.onNewTrip,
-    required this.onEditTrip,
-    required this.onSelectTrip,
-  });
-  final LiveTripData data;
-  final NextMateBackend backend;
-  final Future<void> Function() onRefresh;
-  final VoidCallback onNewTrip;
-  final VoidCallback onEditTrip;
-  final ValueChanged<String> onSelectTrip;
-
-  @override
-  Widget build(BuildContext context) {
-    final days = <_OverviewDay>[
-      for (var index = 0; index < data.days.length; index++)
-        _OverviewDay(
-          day: const [
-            'MON',
-            'TUE',
-            'WED',
-            'THU',
-            'FRI',
-            'SAT',
-            'SUN',
-          ][DateTime.parse(data.days[index]).weekday - 1],
-          date: data.days[index].substring(8),
-          title: '${index + 1}일차 · ${data.itemsFor(data.days[index]).length}곳',
-          stay: '',
-          items: [
-            for (final item in data.itemsFor(data.days[index]))
-              data.placeName(item),
-          ],
-          openTime: '',
-        ),
-    ];
-    final count = data.itemsByDay.values.fold<int>(
-      0,
-      (sum, items) => sum + items.length,
-    );
-    return _PhonePage(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _AppHeader(
-                  title: data.trip.title,
-                  subtitle: '${data.trip.startDate} ~ ${data.trip.endDate}',
-                  showProfile: false,
-                ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: '여행 관리',
-                onSelected: (action) =>
-                    action == 'new' ? onNewTrip() : onEditTrip(),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('여행 수정')),
-                  PopupMenuItem(value: 'new', child: Text('새 여행')),
-                ],
-              ),
-            ],
-          ),
-          if (data.trips.length > 1) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: ValueKey(data.trip.id),
-              initialValue: data.trip.id,
-              decoration: const InputDecoration(labelText: '여행 선택'),
-              items: [
-                for (final trip in data.trips)
-                  DropdownMenuItem(value: trip.id, child: Text(trip.title)),
-              ],
-              onChanged: (id) {
-                if (id != null) onSelectTrip(id);
-              },
-            ),
-          ],
-          const SizedBox(height: 18),
-          const Text(
-            '전체 일정',
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '저장된 방문 장소를 날짜별로 확인하고 편집하세요.',
-            style: TextStyle(fontSize: 11, color: AppColors.muted),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _OverviewStat(value: '${days.length}', label: 'DAYS'),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: _OverviewStat(value: '$count', label: 'PLACES'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: onRefresh,
-              child: ListView.separated(
-                itemCount: days.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 9),
-                itemBuilder: (context, index) => _OverviewDayCard(
-                  day: days[index],
-                  onOpen: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => Scaffold(
-                          body: _LiveDayPlan(
-                            data: data,
-                            day: data.days[index],
-                            backend: backend,
-                          ),
-                        ),
-                      ),
-                    );
-                    await onRefresh();
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LiveExplore extends StatefulWidget {
   const _LiveExplore({
     required this.backend,
     required this.data,
     required this.onRefresh,
+    required this.onDone,
   });
 
   final NextMateBackend backend;
   final LiveTripData data;
   final Future<void> Function() onRefresh;
+  final VoidCallback onDone;
 
   @override
   State<_LiveExplore> createState() => _LiveExploreState();
 }
 
 class _LiveExploreState extends State<_LiveExplore> {
-  final _keyword = TextEditingController();
   String _language = 'en';
   late String _day = widget.data.currentDay;
   List<TourPlace> _results = const [];
-  String? _message;
-  bool _searching = false;
+  TourPlace? _selectedPlace;
   String? _addingContentId;
+  bool _searchFocused = false;
 
   @override
   void didUpdateWidget(covariant _LiveExplore oldWidget) {
@@ -563,45 +455,9 @@ class _LiveExploreState extends State<_LiveExplore> {
     if (oldWidget.data.trip.id != widget.data.trip.id) {
       _day = widget.data.currentDay;
       _results = const [];
-      _message = null;
+      _selectedPlace = null;
     } else if (!widget.data.days.contains(_day)) {
       _day = widget.data.currentDay;
-    }
-  }
-
-  @override
-  void dispose() {
-    _keyword.dispose();
-    super.dispose();
-  }
-
-  Future<void> _search() async {
-    if (_searching) return;
-    if (_keyword.text.trim().length < 2) {
-      setState(() => _message = '검색어를 두 글자 이상 입력해 주세요.');
-      return;
-    }
-    setState(() {
-      _searching = true;
-      _message = null;
-      _results = const [];
-    });
-    try {
-      final results = await widget.backend.tourism.search(
-        _keyword.text,
-        language: _language,
-      );
-      if (!mounted) return;
-      setState(() {
-        _results = results;
-        if (results.isEmpty) _message = '검색 결과가 없어요.';
-      });
-    } catch (_) {
-      if (mounted) {
-        setState(() => _message = '관광정보를 불러오지 못했어요. 검색 서비스 연결을 확인해 주세요.');
-      }
-    } finally {
-      if (mounted) setState(() => _searching = false);
     }
   }
 
@@ -629,106 +485,260 @@ class _LiveExploreState extends State<_LiveExplore> {
   }
 
   @override
-  Widget build(BuildContext context) => _PhonePage(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _AppHeader(
-          title: '장소 탐색',
-          subtitle: '한국관광공사 관광정보에서 장소 찾기',
-          showProfile: false,
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _keyword,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => _search(),
-          decoration: InputDecoration(
-            labelText: '관광지 이름 검색',
-            hintText: '예: Gyeongbokgung',
-            suffixIcon: IconButton(
-              tooltip: '검색',
-              onPressed: _searching ? null : _search,
-              icon: const Icon(Icons.search_rounded),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final sheetHeight = (constraints.maxHeight * 0.62).clamp(280.0, 520.0);
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: TourResultMap(
+              places: _results,
+              showFallbackHint: !_searchFocused,
+              onSelected: (place) => setState(() => _selectedPlace = place),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                initialValue: _language,
-                decoration: const InputDecoration(labelText: '검색 언어'),
-                items: const [
-                  DropdownMenuItem(value: 'en', child: Text('English')),
-                  DropdownMenuItem(value: 'ja', child: Text('日本語')),
-                ],
-                onChanged: (value) {
-                  if (value != null) setState(() => _language = value);
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                key: ValueKey('${widget.data.trip.id}:$_day'),
-                initialValue: _day,
-                decoration: const InputDecoration(labelText: '추가할 날짜'),
-                items: [
-                  for (var index = 0; index < widget.data.days.length; index++)
-                    DropdownMenuItem(
-                      value: widget.data.days[index],
-                      child: Text(
-                        '${index + 1}일차 · ${widget.data.days[index].substring(5)}',
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Material(
+                    color: Colors.white,
+                    elevation: 3,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: TourismAutocomplete(
+                        tourism: widget.backend.tourism,
+                        language: _language,
+                        labelText:
+                            'Search places in ${widget.data.trip.destinationName}',
+                        floating: true,
+                        onFocusChanged: (focused) =>
+                            setState(() => _searchFocused = focused),
+                        onResults: (results) => setState(() {
+                          _results = results;
+                          _selectedPlace = null;
+                        }),
+                        onSelected: (place) =>
+                            setState(() => _selectedPlace = place),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 9),
+                  Wrap(
+                    spacing: 7,
+                    children: [
+                      _ExploreCategoryChip(
+                        label: 'English',
+                        selected: _language == 'en',
+                        onTap: () => setState(() => _language = 'en'),
+                      ),
+                      _ExploreCategoryChip(
+                        label: '日本語',
+                        selected: _language == 'ja',
+                        onTap: () => setState(() => _language = 'ja'),
+                      ),
+                    ],
+                  ),
                 ],
-                onChanged: (value) {
-                  if (value != null) setState(() => _day = value);
-                },
               ),
+            ),
+          ),
+          if (!_searchFocused)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: _resultsPanel(sheetHeight),
+            ),
+        ],
+      );
+    },
+  );
+
+  Widget _resultsPanel(double height) {
+    final dayIndex = widget.data.days.indexOf(_day) + 1;
+    final savedCount = _results.where((place) => _isAdded(place)).length;
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFAFBF9),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 24,
+            offset: Offset(0, -6),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Explore ${widget.data.trip.destinationName}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: AppColors.green,
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text(
+                  'Add to day $dayIndex',
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                const SizedBox(width: 5),
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _day,
+                    isDense: true,
+                    iconSize: 17,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.green,
+                    ),
+                    items: [
+                      for (
+                        var index = 0;
+                        index < widget.data.days.length;
+                        index++
+                      )
+                        DropdownMenuItem(
+                          value: widget.data.days[index],
+                          child: Text(
+                            '${index + 1}일차 · ${widget.data.days[index].substring(5)}',
+                          ),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _day = value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            if (_selectedPlace case final place?)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      place.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _isAdded(place) ? null : () => _add(place),
+                    icon: const Icon(Icons.add_rounded, size: 17),
+                    label: const Text('일정에 추가'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _results.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Search a place to see official tourism results',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.muted, fontSize: 13),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: _results.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final place = _results[index];
+                        return _ExplorePlaceCard(
+                          place: _ExplorePlace(
+                            id: index,
+                            title: place.name,
+                            local: place.address,
+                            hours: '운영시간 정보 없음',
+                            travel: '경로 연결 전',
+                            note: '관광정보 검색 결과',
+                            address: place.address,
+                            entrance: '',
+                            localEntrance: '',
+                            reservation: '',
+                            state: _ExplorePlaceState.open,
+                            icon: Icons.place_rounded,
+                          ),
+                          added:
+                              _isAdded(place) ||
+                              _addingContentId == place.contentId,
+                          onTap: () => setState(() => _selectedPlace = place),
+                          onAdd: () => _add(place),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: AppColors.green,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    '$savedCount saved for day $dayIndex',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: widget.onDone, child: const Text('Done')),
+              ],
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        if (_searching) const LinearProgressIndicator(),
-        if (_message != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(_message!),
-          ),
-        Expanded(
-          child: ListView.separated(
-            itemCount: _results.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final place = _results[index];
-              return Card(
-                color: Colors.white,
-                child: ListTile(
-                  title: Text(place.name),
-                  subtitle: Text(place.address),
-                  trailing: IconButton(
-                    tooltip: '일정에 추가',
-                    onPressed: _addingContentId == null
-                        ? () => _add(place)
-                        : null,
-                    icon: _addingContentId == place.contentId
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add_circle_outline_rounded),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
+
+  bool _isAdded(TourPlace place) => widget.data
+      .itemsFor(_day)
+      .any(
+        (item) =>
+            widget.data.places[item['place_id']]?['tour_api_content_id'] ==
+            place.contentId,
+      );
 }
 
 class _LiveDayPlan extends StatelessWidget {
@@ -809,41 +819,102 @@ class _LiveDayPlan extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AppHeader(
-          title: '$day 일정',
-          subtitle: data.trip.title,
-          showProfile: false,
+        Row(
+          children: [
+            _MapCircleButton(
+              icon: Icons.arrow_back_rounded,
+              onTap: () => Navigator.pop(context),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    day,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    data.trip.title,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 18),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
-          label: const Text('전체 일정'),
+        const Text(
+          '오늘의 방문 장소',
+          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
+        const Text(
+          '시간표 없이 내 속도에 맞춰 이동하세요.',
+          style: TextStyle(fontSize: 12, color: AppColors.muted),
+        ),
+        const SizedBox(height: 13),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.paleGreen,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 17,
+                color: AppColors.green,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '운영시간·추천 순서는 아직 연결 전이에요.',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
         Expanded(
           child: ListView(
             children: [
+              if (data.itemsFor(day).isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('방문 장소를 추가해 주세요.'),
+                ),
               for (final item in data.itemsFor(day))
-                Card(
-                  color: Colors.white,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text('${(item['position'] as int) + 1}'),
-                    ),
-                    title: Text(data.placeName(item)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item['notes'] as String? ?? '방문 예정'),
-                        if (data.places[item['place_id']]?['latitude'] == null)
-                          const Text(
-                            '위치 미등록 · 경로 안내 불가',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                      ],
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _DayPlaceCard(
+                    index: item['position'] as int,
+                    draggable: false,
+                    place: _DayPlace(
+                      id: item['position'] as int,
+                      title: data.placeName(item),
+                      local: item['notes'] as String? ?? '방문 예정',
+                      hours: data.places[item['place_id']]?['latitude'] == null
+                          ? '위치 미등록'
+                          : '위치 등록됨',
+                      note: switch (item['progress_status']) {
+                        'completed' => '방문 완료',
+                        'skipped' => '건너뜀',
+                        _ => '방문 예정',
+                      },
+                      availability: _PlaceAvailability.open,
+                      icon: Icons.place_rounded,
                     ),
                     trailing: PopupMenuButton<String>(
+                      tooltip: '방문 상태 변경',
                       onSelected: (value) => _status(context, item, value),
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'planned', child: Text('방문 예정')),
@@ -856,13 +927,12 @@ class _LiveDayPlan extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => _add(context),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('장소 직접 추가'),
-          ),
+        _PrimaryAction(
+          label: '방문 장소 추가',
+          icon: Icons.add_rounded,
+          background: AppColors.deepGreen,
+          foreground: Colors.white,
+          onTap: () => _add(context),
         ),
       ],
     ),

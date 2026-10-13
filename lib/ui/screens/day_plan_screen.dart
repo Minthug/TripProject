@@ -260,11 +260,15 @@ class _DayPlaceCard extends StatelessWidget {
     required this.index,
     required this.place,
     this.onMoveDay,
+    this.draggable = true,
+    this.trailing,
   });
 
   final int index;
   final _DayPlace place;
   final VoidCallback? onMoveDay;
+  final bool draggable;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -286,17 +290,20 @@ class _DayPlaceCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ReorderableDragStartListener(
-            index: index,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 16),
-              child: Icon(
-                Icons.drag_indicator_rounded,
-                size: 18,
-                color: AppColors.muted,
+          if (draggable)
+            ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 2, vertical: 16),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  size: 18,
+                  color: AppColors.muted,
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            const Icon(Icons.place_outlined, size: 18, color: AppColors.muted),
           const SizedBox(width: 7),
           Container(
             width: 39,
@@ -342,7 +349,9 @@ class _DayPlaceCard extends StatelessWidget {
               ],
             ),
           ),
-          if (onMoveDay != null)
+          if (trailing != null)
+            trailing!
+          else if (onMoveDay != null)
             TextButton(
               onPressed: onMoveDay,
               style: TextButton.styleFrom(

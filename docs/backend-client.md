@@ -13,9 +13,16 @@ Git에 포함하지 않는 위 파일에 다음 빌드 설정을 넣는다.
 ```json
 {
   "SUPABASE_URL": "https://YOUR_PROJECT.supabase.co",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_KEY"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_KEY",
+  "NAVER_MAP_CLIENT_ID": "YOUR_MOBILE_DYNAMIC_MAP_CLIENT_ID"
 }
 ```
+
+`NAVER_MAP_CLIENT_ID`는 Android/iOS 앱의 네이버 지도 표시용 선택 설정이다.
+네이버 클라우드 Maps에서 Mobile Dynamic Map을 활성화하고 Android 패키지명
+`com.minthug.trip_project`를 등록해 발급받는다. 이 값이 없으면 검색 결과 목록은
+사용할 수 있지만 지도 영역에는 설정 안내가 표시된다. Client Secret은 Flutter 앱에
+넣지 않는다. 웹 갤러리는 모바일 지도 SDK를 실행하지 않는다.
 
 화면에서는 `BackendScope.of(context)`로 Repository 모음에 접근한다.
 설정이 있는 빌드는 로그인 후 실제 DB 기반 내 여행 화면으로 진입한다.

@@ -1,9 +1,24 @@
 part of '../../main.dart';
 
 class TripOverviewScreen extends StatefulWidget {
-  const TripOverviewScreen({super.key, this.showBack = true});
+  const TripOverviewScreen({
+    super.key,
+    this.showBack = true,
+    this.liveData,
+    this.backend,
+    this.onRefresh,
+    this.onNewTrip,
+    this.onEditTrip,
+    this.onSelectTrip,
+  });
 
   final bool showBack;
+  final LiveTripData? liveData;
+  final NextMateBackend? backend;
+  final Future<void> Function()? onRefresh;
+  final VoidCallback? onNewTrip;
+  final VoidCallback? onEditTrip;
+  final ValueChanged<String>? onSelectTrip;
 
   @override
   State<TripOverviewScreen> createState() => _TripOverviewScreenState();
@@ -12,7 +27,7 @@ class TripOverviewScreen extends StatefulWidget {
 class _TripOverviewScreenState extends State<TripOverviewScreen> {
   bool issuesOnly = false;
 
-  static const days = [
+  static const sampleDays = [
     _OverviewDay(
       day: 'MON',
       date: '14',
@@ -60,6 +75,32 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final live = widget.liveData;
+    final days = live == null
+        ? sampleDays
+        : [
+            for (var index = 0; index < live.days.length; index++)
+              _OverviewDay(
+                day: const [
+                  'MON',
+                  'TUE',
+                  'WED',
+                  'THU',
+                  'FRI',
+                  'SAT',
+                  'SUN',
+                ][DateTime.parse(live.days[index]).weekday - 1],
+                date: live.days[index].substring(8),
+                title:
+                    '${index + 1}일차 · ${live.itemsFor(live.days[index]).length}곳',
+                stay: '',
+                items: [
+                  for (final item in live.itemsFor(live.days[index]))
+                    live.placeName(item),
+                ],
+                openTime: '',
+              ),
+          ];
     final visibleDays = issuesOnly
         ? days.where((day) => day.issue != null).toList()
         : days;
@@ -78,33 +119,47 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
                 ),
                 const SizedBox(width: 11),
               ],
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Seoul trip',
+                      live?.trip.title ?? 'Seoul trip',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
-                      'Sep 14–18 · 4 nights',
+                      live == null
+                          ? 'Sep 14–18 · 4 nights'
+                          : '${live.trip.startDate} ~ ${live.trip.endDate}',
                       style: TextStyle(fontSize: 11, color: AppColors.muted),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: () => _showPrototypeMessage(context),
-                icon: const Icon(Icons.more_horiz_rounded),
-              ),
+              if (live == null)
+                IconButton(
+                  onPressed: () => _showPrototypeMessage(context),
+                  icon: const Icon(Icons.more_horiz_rounded),
+                )
+              else
+                PopupMenuButton<String>(
+                  tooltip: '여행 관리',
+                  onSelected: (action) => action == 'new'
+                      ? widget.onNewTrip?.call()
+                      : widget.onEditTrip?.call(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('여행 수정')),
+                    PopupMenuItem(value: 'new', child: Text('새 여행')),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 15),
-          const Text(
-            'Your whole trip',
+          Text(
+            live == null ? 'Your whole trip' : '전체 일정',
             style: TextStyle(
               fontSize: 25,
               fontWeight: FontWeight.w800,
@@ -112,30 +167,54 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Stays, open time and conflicts across every day.',
+          Text(
+            live == null
+                ? 'Stays, open time and conflicts across every day.'
+                : '저장된 장소를 날짜별로 확인하고 편집하세요.',
             style: TextStyle(fontSize: 11, color: AppColors.muted),
           ),
           const SizedBox(height: 10),
-          const Row(
+          Row(
             children: [
               Expanded(
-                child: _OverviewStat(value: '5', label: 'DAYS'),
+                child: _OverviewStat(value: '${days.length}', label: 'DAYS'),
               ),
-              SizedBox(width: 7),
-              Expanded(
-                child: _OverviewStat(value: '2', label: 'STAYS'),
-              ),
-              SizedBox(width: 7),
+              const SizedBox(width: 7),
               Expanded(
                 child: _OverviewStat(
-                  value: '2',
-                  label: 'ISSUES',
-                  warning: true,
+                  value: live == null
+                      ? '2'
+                      : '${live.itemsByDay.values.fold<int>(0, (sum, items) => sum + items.length)}',
+                  label: live == null ? 'STAYS' : 'PLACES',
                 ),
               ),
+              if (live == null) ...[
+                const SizedBox(width: 7),
+                const Expanded(
+                  child: _OverviewStat(
+                    value: '2',
+                    label: 'ISSUES',
+                    warning: true,
+                  ),
+                ),
+              ],
             ],
           ),
+          if (live != null && live.trips.length > 1) ...[
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              key: ValueKey(live.trip.id),
+              initialValue: live.trip.id,
+              decoration: const InputDecoration(labelText: '여행 선택'),
+              items: [
+                for (final trip in live.trips)
+                  DropdownMenuItem(value: trip.id, child: Text(trip.title)),
+              ],
+              onChanged: (id) {
+                if (id != null) widget.onSelectTrip?.call(id);
+              },
+            ),
+          ],
           const SizedBox(height: 11),
           Row(
             children: [
@@ -153,41 +232,59 @@ class _TripOverviewScreenState extends State<TripOverviewScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              FilterChip(
-                selected: issuesOnly,
-                showCheckmark: false,
-                avatar: Icon(
-                  Icons.error_outline_rounded,
-                  size: 15,
-                  color: issuesOnly ? Colors.white : const Color(0xFFB64B43),
+              if (live == null)
+                FilterChip(
+                  selected: issuesOnly,
+                  showCheckmark: false,
+                  avatar: Icon(
+                    Icons.error_outline_rounded,
+                    size: 15,
+                    color: issuesOnly ? Colors.white : const Color(0xFFB64B43),
+                  ),
+                  label: const Text('Issues'),
+                  labelStyle: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: issuesOnly ? Colors.white : AppColors.ink,
+                  ),
+                  selectedColor: const Color(0xFFB64B43),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.line),
+                  onSelected: (value) => setState(() => issuesOnly = value),
                 ),
-                label: const Text('Issues'),
-                labelStyle: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: issuesOnly ? Colors.white : AppColors.ink,
-                ),
-                selectedColor: const Color(0xFFB64B43),
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: AppColors.line),
-                onSelected: (value) => setState(() => issuesOnly = value),
-              ),
             ],
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: visibleDays.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 9),
-              itemBuilder: (context, index) => _OverviewDayCard(
-                day: visibleDays[index],
-                onOpen: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const Scaffold(body: FlexibleDayPlanScreen()),
-                  ),
-                ),
+            child: RefreshIndicator(
+              onRefresh: widget.onRefresh ?? () async {},
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                itemCount: visibleDays.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 9),
+                itemBuilder: (context, index) {
+                  final day = visibleDays[index];
+                  final dayIndex = days.indexOf(day);
+                  return _OverviewDayCard(
+                    day: day,
+                    onOpen: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                            body: live == null
+                                ? const FlexibleDayPlanScreen()
+                                : _LiveDayPlan(
+                                    data: live,
+                                    day: live.days[dayIndex],
+                                    backend: widget.backend!,
+                                  ),
+                          ),
+                        ),
+                      );
+                      if (live != null) await widget.onRefresh?.call();
+                    },
+                  );
+                },
               ),
             ),
           ),

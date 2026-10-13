@@ -8,6 +8,10 @@ project_id = "nextmate"
 # Authentication is checked by createSupabaseContext so CORS preflight can pass.
 verify_jwt = false
 
+[functions.transit-route]
+# Authentication is checked in the function so CORS preflight can pass.
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
